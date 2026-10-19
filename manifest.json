@@ -1,0 +1,1 @@
+{ "$schema": "../../manifest.schema.json", "manifestVersion": 1, "id": "halo", "settings": ["useImperial", "darkMode", "renderQuality", "alwaysOnBlindSpotMonitor"] }

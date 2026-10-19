@@ -1,0 +1,599 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Halo for Tesla</title>
+<style>
+/* Halo for Tesla. The cluster a Model 3 / Y never had, for legacy cars (2019-2024)
+   and the Model Y Juniper alike. A light band around the screen edge carries what
+   peripheral vision can catch: Autopilot blue, turn sweeps, blind-spot red, the light
+   ahead or an amber over-limit warning. The middle reads like Tesla's own UI. */
+@font-face { font-family: "Montserrat"; font-weight: 100 900; src: url(fonts/montserrat-var.woff2) format("woff2"); }
+:root {
+  --bg: #0A0B0D; --ink: #F3F4F6; --dim: #6B7079; --faint: #2A2D33; --band: #1B1E23;
+  --car: #E9EBEE; --carEdge: #8E949C; --glass: #1A1D23; --lane: #4A4F57; --road: #15181D; --other: #5E646D;
+  --ap: #3D7BFF; --regen: #2FCB6A; --turn: #FFB020; --over: #FFB020; --over2: #FF7A1A; --stop: #FF3B30;
+  --u: min(1vh, 0.54vw);
+}
+:root.day {
+  --bg: #F1F2F4; --ink: #171A20; --dim: #8A8F98; --faint: #D3D6DB; --band: #DADDE2;
+  --car: #FFFFFF; --carEdge: #A9AEB6; --glass: #2B2F36; --lane: #B4B9C1; --road: #E3E6EA; --other: #9AA0A8; --ap: #2F6BF0; --regen: #1FA857; --over: #C97800; --over2: #B84A00;
+}
+[hidden] { display: none !important; }
+html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink); overflow: hidden;
+  font-family: "Montserrat", system-ui, sans-serif; font-variant-numeric: tabular-nums;
+  -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; transition: background .5s, color .5s; }
+canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.wrap { position: absolute; inset: calc(var(--u) * 7) calc(var(--u) * 8); display: grid;
+  grid-template-columns: auto 1fr 1.25fr auto; align-items: center; gap: calc(var(--u) * 6); }
+
+/* gear stack, like the top-left of the Tesla screen */
+.gears { display: grid; gap: calc(var(--u) * 1.6); font-weight: 600; font-size: calc(var(--u) * 5.4); color: var(--faint); text-align: center; }
+.gears .on { color: var(--ink); text-shadow: 0 0 calc(var(--u) * 2) rgba(255,255,255,.25); }
+:root.day .gears .on { text-shadow: none; }
+
+.speed { text-align: center; }
+.speed b { display: block; font-weight: 500; font-size: calc(var(--u) * 37); line-height: .82; letter-spacing: -0.035em;
+  text-shadow: 0 0 calc(var(--u) * 6) rgba(255,255,255,.08); transition: color .3s; }
+:root.day .speed b { text-shadow: none; }
+.speed .unit { margin-top: calc(var(--u) * 2.6); font-size: calc(var(--u) * 4); font-weight: 500; color: var(--dim); letter-spacing: .06em; }
+.speed.over b { color: var(--over); }
+.speed.over2 b { color: var(--over2); }
+.speed b { transition: color .5s; }
+.power { position: relative; height: calc(var(--u) * .9); margin: calc(var(--u) * 4) auto 0; width: 82%; background: var(--faint); border-radius: 9px; }
+.power i { position: absolute; top: 0; bottom: 0; border-radius: 9px; background: linear-gradient(90deg, rgba(243,244,246,.35), var(--ink));
+  box-shadow: 0 0 calc(var(--u) * 1.6) rgba(255,255,255,.25); }
+.power i.regen { background: linear-gradient(270deg, rgba(47,203,106,.35), var(--regen)); box-shadow: 0 0 calc(var(--u) * 1.8) rgba(47,203,106,.45); }
+:root.day .power i { background: var(--ink); box-shadow: none; }
+:root.day .power i.regen { background: var(--regen); box-shadow: none; }
+.power:after { content: ""; position: absolute; left: 30%; top: -60%; bottom: -60%; width: 2px; background: var(--dim); }
+
+/* lane view off: speed takes the middle */
+.novis .wrap { grid-template-columns: auto 1fr auto; }
+.novis .viz { display: none; }
+.novis .speed b { font-size: calc(var(--u) * 46); }
+.novis .power { max-width: calc(var(--u) * 72); }
+:root.day #beams { display: none; }
+.viz { position: relative; }
+.viz #gl { display: none; position: static; inset: auto; width: 100%; height: calc(var(--u) * 70); }
+.viz.gl #gl { display: block;
+  -webkit-mask-image: radial-gradient(ellipse 50% 50% at 50% 50%, #000 55%, transparent 100%);
+  mask-image: radial-gradient(ellipse 50% 50% at 50% 50%, #000 55%, transparent 100%); }
+.viz.gl svg { display: none; }
+#gllabel { position: absolute; transform: translate(-50%, -100%); font-weight: 600; font-size: calc(var(--u) * 3.6);
+  color: var(--ink); text-shadow: 0 1px 6px var(--bg); pointer-events: none; white-space: nowrap; }
+.viz svg { width: 100%; height: calc(var(--u) * 70); display: block; overflow: visible; }
+
+.side { display: grid; justify-items: center; gap: calc(var(--u) * 5); min-width: calc(var(--u) * 20); }
+.us { background: #fff; color: #111; border: calc(var(--u) * .7) solid #111; outline: calc(var(--u) * .5) solid #fff;
+  border-radius: calc(var(--u) * 1.6); padding: calc(var(--u) * 1.6) calc(var(--u) * 2.2) calc(var(--u) * 1);
+  text-align: center; font-weight: 700; line-height: 1; }
+.us small { display: block; font-size: calc(var(--u) * 2.4); letter-spacing: .04em; }
+.us b { display: block; font-size: calc(var(--u) * 9.5); margin-top: calc(var(--u) * .6); font-weight: 600; }
+.eu { width: calc(var(--u) * 17); height: calc(var(--u) * 17); border-radius: 50%; background: #fff; color: #111;
+  border: calc(var(--u) * 2) solid #E21B1B; box-sizing: border-box; display: grid; place-items: center;
+  font-weight: 700; font-size: calc(var(--u) * 7.4); letter-spacing: -0.04em; }
+.eu.wide { font-size: calc(var(--u) * 5.6); }
+.ap { display: flex; align-items: center; gap: calc(var(--u) * 1.8); color: var(--dim); transition: color .3s; }
+.ap svg { width: calc(var(--u) * 7.5); height: calc(var(--u) * 7.5); }
+.ap b { font-weight: 600; font-size: calc(var(--u) * 7); }
+.ap.on { color: var(--ap); }
+
+.top { position: absolute; top: calc(var(--u) * 6.5); left: calc(var(--u) * 10); right: calc(var(--u) * 10);
+  display: flex; justify-content: space-between; font-weight: 600; font-size: calc(var(--u) * 3.6); color: var(--dim); }
+.batt { display: flex; align-items: center; gap: calc(var(--u) * 1.4); }
+.batt .cell { position: relative; width: calc(var(--u) * 7); height: calc(var(--u) * 3.2); border: 2px solid var(--dim); border-radius: 4px; box-sizing: border-box; }
+.batt .cell:after { content: ""; position: absolute; right: calc(var(--u) * -1); top: 28%; bottom: 28%; width: calc(var(--u) * .6); background: var(--dim); border-radius: 0 2px 2px 0; }
+.batt .cell i { position: absolute; left: 2px; top: 2px; bottom: 2px; background: var(--ink); border-radius: 2px; }
+.tells { position: absolute; bottom: calc(var(--u) * 6); left: 50%; transform: translateX(-50%); display: flex; gap: calc(var(--u) * 3);
+  font-weight: 700; font-size: calc(var(--u) * 3.4); color: var(--stop); letter-spacing: .08em; }
+.light { display: flex; align-items: center; gap: calc(var(--u) * 1.4); font-weight: 600; font-size: calc(var(--u) * 4.4); }
+.light i { width: calc(var(--u) * 3.2); height: calc(var(--u) * 3.2); border-radius: 50%; display: block; }
+/* settings sheet: long-press the dash while stopped */
+.sheet { position: absolute; inset: 0; display: grid; place-items: center; background: rgba(0,0,0,.55); z-index: 5; }
+.sheet .card { width: min(88vw, calc(var(--u) * 120)); background: var(--bg); color: var(--ink); border: 1px solid var(--faint);
+  border-radius: calc(var(--u) * 4); padding: calc(var(--u) * 6); display: grid; gap: calc(var(--u) * 4); box-shadow: 0 20px 60px rgba(0,0,0,.5); }
+.sheet h2 { margin: 0; font-weight: 600; font-size: calc(var(--u) * 5.4); }
+.sheet .row { display: flex; align-items: center; justify-content: space-between; gap: calc(var(--u) * 4);
+  padding-block: calc(var(--u) * 3); border-top: 1px solid var(--faint); border-bottom: 1px solid var(--faint); }
+.sheet .row b { display: block; font-weight: 600; font-size: calc(var(--u) * 4.4); }
+.sheet .row small { display: block; color: var(--dim); font-size: calc(var(--u) * 3.2); margin-top: calc(var(--u) * .8); }
+.switch { position: relative; flex: none; width: calc(var(--u) * 13); height: calc(var(--u) * 7.4); min-width: 52px; min-height: 30px;
+  border-radius: 999px; border: 0; padding: 0; background: var(--faint); cursor: pointer; transition: background .2s; }
+.switch:after { content: ""; position: absolute; top: 8%; left: 5%; height: 84%; aspect-ratio: 1; border-radius: 50%; background: #fff; transition: left .2s; }
+.switch[aria-checked="true"] { background: var(--ap); }
+.switch[aria-checked="true"]:after { left: calc(95% - 84% * 7.4 / 13); }
+.sheet .done { flex: none; font: 600 calc(var(--u) * 4) "Montserrat", system-ui, sans-serif; color: #fff; background: var(--ap);
+  border: 0; border-radius: calc(var(--u) * 2); padding: calc(var(--u) * 2.4) calc(var(--u) * 6); min-height: 44px; cursor: pointer; }
+.switch:focus-visible, .sheet .done:focus-visible { outline: 2px solid var(--ap); outline-offset: 3px; }
+.sheet .hint { color: var(--dim); font-size: calc(var(--u) * 3); margin: 0; }
+.sheet .card { width: min(94vw, calc(var(--u) * 175)); max-height: calc(100% - var(--u) * 4); overflow: auto; box-sizing: border-box; }
+.cols { display: grid; grid-template-columns: 1fr 1fr; gap: calc(var(--u) * 5); }
+.cols > .col:first-child { grid-row: span 2; }
+@media (max-height: 420px) {
+  .longhint { display: none; }
+  #sheet .card { padding: calc(var(--u) * 3.5) calc(var(--u) * 5); gap: calc(var(--u) * 2); }
+  #sheet .done { padding-block: calc(var(--u) * 1.6); }
+  .col { gap: calc(var(--u) * 3); }
+}
+/* wide phone screens have room for three columns, so nothing needs scrolling */
+@media (min-aspect-ratio: 16/9) {
+  .cols { grid-template-columns: 1fr 1fr 1fr; gap: calc(var(--u) * 4); }
+  .cols > .col:first-child { grid-row: auto; }
+  .sheet .card { width: min(96vw, calc(var(--u) * 196)); }
+  .swatches { grid-template-columns: repeat(5, 1fr); }
+}
+.col { display: grid; gap: calc(var(--u) * 4); align-content: start; }
+.field { display: grid; gap: calc(var(--u) * 1.8); }
+.field b { font-weight: 600; font-size: calc(var(--u) * 4.2); }
+.field small { color: var(--dim); font-size: calc(var(--u) * 3); }
+.seg { display: flex; background: var(--faint); border-radius: calc(var(--u) * 2); padding: 3px; gap: 3px; }
+.seg button { flex: 1; font: 600 calc(var(--u) * 3.4) "Montserrat", system-ui, sans-serif; color: var(--dim); background: transparent; border: 0;
+  border-radius: calc(var(--u) * 1.6); min-height: 40px; cursor: pointer; }
+.seg[aria-disabled="true"] { opacity: .45; }
+.seg button[aria-checked="true"] { background: var(--bg); color: var(--ink); box-shadow: 0 1px 4px rgba(0,0,0,.3); }
+.swatches { display: grid; grid-template-columns: repeat(7, 1fr); gap: calc(var(--u) * 1.6); }
+.swatches button { aspect-ratio: 1; border-radius: 50%; border: 2px solid var(--faint); padding: 0; cursor: pointer; min-width: 36px; min-height: 36px;
+  background-image: radial-gradient(circle at 35% 30%, rgba(255,255,255,.45), rgba(255,255,255,0) 55%); }
+.swatches button[aria-checked="true"] { border-color: var(--ap); box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px var(--ap); }
+.swatches .auto { background: var(--faint); color: var(--ink); font: 700 calc(var(--u) * 2.6) "Montserrat", system-ui, sans-serif; }
+.seg button:focus-visible, .swatches button:focus-visible { outline: 2px solid var(--ap); outline-offset: 2px; }
+.sheet .head { display: flex; align-items: center; justify-content: space-between; gap: calc(var(--u) * 4); }
+.sheet .card { padding: calc(var(--u) * 5) calc(var(--u) * 6); gap: calc(var(--u) * 3); }
+.sheet .row { padding-block: calc(var(--u) * 2); }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div class="top">
+  <div class="batt" id="battWrap"><div class="cell"><i id="battFill"></i></div><span><span id="bat">—</span>%</span></div>
+  <div id="clk">—</div>
+</div>
+<div class="wrap">
+  <div class="gears" id="gears"><span>P</span><span>R</span><span>N</span><span>D</span></div>
+  <div class="speed" id="spd">
+    <b id="v">0</b>
+    <div class="unit" id="unit">MPH</div>
+    <div class="power"><i id="pw"></i></div>
+  </div>
+  <div class="viz">
+    <canvas id="gl"></canvas><div id="gllabel" hidden></div>
+    <svg viewBox="0 0 400 500" preserveAspectRatio="xMidYMid meet">
+      <defs>
+        <linearGradient id="fade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".3" stop-color="#fff" stop-opacity="1"/><stop offset=".86" stop-color="#fff" stop-opacity="1"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+        <mask id="roadMask" maskUnits="userSpaceOnUse" x="-60" y="0" width="520" height="500"><rect x="-60" y="0" width="520" height="500" fill="url(#fade)"/></mask>
+        <linearGradient id="apPath" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-opacity=".6" style="stop-color:var(--ap)"/><stop offset=".55" stop-opacity=".22" style="stop-color:var(--ap)"/><stop offset="1" stop-opacity="0" style="stop-color:var(--ap)"/></linearGradient>
+        <linearGradient id="body" x1="0" y1="0" x2="1" y2="0"><stop offset="0" style="stop-color:var(--carEdge)"/><stop offset=".22" style="stop-color:var(--car)"/><stop offset=".5" stop-color="#fff"/><stop offset=".78" style="stop-color:var(--car)"/><stop offset="1" style="stop-color:var(--carEdge)"/></linearGradient>
+        <linearGradient id="otherBody" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#3A3F46"/><stop offset=".5" style="stop-color:var(--other)"/><stop offset="1" stop-color="#3A3F46"/></linearGradient>
+        <linearGradient id="glassG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3A4250"/><stop offset=".45" style="stop-color:var(--glass)"/><stop offset="1" stop-color="#0E1014"/></linearGradient>
+        <radialGradient id="shadowG"><stop offset="0" stop-color="#000" stop-opacity=".55"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient>
+        <radialGradient id="bsGrad"><stop offset="0" stop-color="#FF3B30" stop-opacity=".75"/><stop offset=".6" stop-color="#FF3B30" stop-opacity=".25"/><stop offset="1" stop-color="#FF3B30" stop-opacity="0"/></radialGradient>
+        <radialGradient id="tailGlow"><stop offset="0" stop-color="#FF2A2A" stop-opacity=".9"/><stop offset="1" stop-color="#FF2A2A" stop-opacity="0"/></radialGradient>
+        <linearGradient id="beam" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#fff" stop-opacity=".22"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+        <!-- top-down sedan, own drawing; front faces up -->
+        <g id="carShape">
+          <rect x="-36" y="-60" width="9" height="27" rx="3" fill="#0B0C0E"/><rect x="27" y="-60" width="9" height="27" rx="3" fill="#0B0C0E"/>
+          <rect x="-36" y="32" width="9" height="27" rx="3" fill="#0B0C0E"/><rect x="27" y="32" width="9" height="27" rx="3" fill="#0B0C0E"/>
+          <path style="fill:var(--paint);stroke:var(--paintEdge);stroke-width:1" d="M-26 -70 Q-28 -80 -16 -84 Q0 -88 16 -84 Q28 -80 26 -70 L31 -30 L32 52 Q32 76 14 80 Q0 82 -14 80 Q-32 76 -32 52 L-31 -30 Z"/>
+          <path d="M-22 -40 Q0 -48 22 -40 L24 -18 L24 38 Q0 46 -24 38 L-24 -18 Z" fill="url(#glassG)"/>
+          <path d="M-14 -40 Q-2 -44 8 -42 L-16 30 Q-20 30 -20 26 Z" fill="#fff" opacity=".07"/>
+          <path d="M-12 -74 Q0 -77 12 -74" fill="none" stroke="#000" stroke-opacity=".12" stroke-width="1.5"/>
+          <path style="fill:var(--mirror);stroke:var(--paintEdge);stroke-width:1" d="M-31 -34 l-10 -3 q-2 4 1 7 l9 2z M31 -34 l10 -3 q2 4 -1 7 l-9 2z"/>
+        </g>
+      </defs>
+      <g mask="url(#roadMask)">
+        <path id="road" style="fill:var(--road)"/>
+        <path id="path" fill="url(#apPath)" opacity="0"/>
+        <path id="edgeL" fill="none" stroke-width="3" style="stroke:var(--lane)" opacity=".6"/>
+        <path id="edgeR" fill="none" stroke-width="3" style="stroke:var(--lane)" opacity=".6"/>
+        <path id="laneL" fill="none" stroke-width="5" stroke-linecap="round" stroke-dasharray="26 30" style="stroke:var(--lane)"/>
+        <path id="laneR" fill="none" stroke-width="5" stroke-linecap="round" stroke-dasharray="26 30" style="stroke:var(--lane)"/>
+      </g>
+      <g id="stop" opacity="0">
+        <rect id="stopGlow" x="126" width="148" height="30" rx="15" opacity=".16"/>
+        <rect id="stopBar" x="140" width="120" height="9" rx="4"/>
+        <text id="stopTxt" x="200" text-anchor="middle" font-size="22" font-weight="600" style="fill:var(--ink)"></text>
+      </g>
+      <g id="otherL" opacity="0"><ellipse cx="0" cy="0" rx="62" ry="110" fill="url(#bsGrad)"/><use href="#carShape" transform="scale(.92)" style="--paint:url(#otherBody);--mirror:var(--other);--paintEdge:transparent"/></g>
+      <g id="otherR" opacity="0"><ellipse cx="0" cy="0" rx="62" ry="110" fill="url(#bsGrad)"/><use href="#carShape" transform="scale(.92)" style="--paint:url(#otherBody);--mirror:var(--other);--paintEdge:transparent"/></g>
+      <g id="ego" transform="translate(200 360)">
+        <path id="beams" d="M-24 -86 L-46 -250 L46 -250 L24 -86 Z" fill="url(#beam)"/>
+        <ellipse cx="0" cy="6" rx="46" ry="98" fill="url(#shadowG)"/>
+        <use href="#carShape" style="--paint:url(#body);--mirror:var(--car);--paintEdge:var(--carEdge)"/>
+        <path d="M-22 -80 q4 -3 9 -3 M22 -80 q-4 -3 -9 -3" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/>
+        <ellipse id="tailHalo" cx="0" cy="84" rx="44" ry="16" fill="url(#tailGlow)" opacity=".25"/>
+        <path id="tail" d="M-26 74 Q0 80 26 74" fill="none" stroke="#FF2A2A" stroke-width="3.2" stroke-linecap="round" opacity=".6"/>
+      </g>
+    </svg>
+  </div>
+  <div class="side">
+    <div id="sign"></div>
+    <div class="ap" id="ap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="9.5"/><circle cx="12" cy="12" r="2.2" fill="currentColor"/><path d="M2.8 10.5 Q12 8 21.2 10.5 M12 14.2 V21.4"/></svg>
+      <b id="setv">—</b>
+    </div>
+    <div class="light" id="light" hidden><i id="lightDot"></i><span id="lightTxt"></span></div>
+  </div>
+</div>
+<div class="tells" id="tells"></div>
+<div class="sheet" id="sheet" hidden>
+  <div class="card" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+    <div class="head"><h2 id="sheetTitle">Halo settings</h2><button type="button" class="done" id="sheetDone">Done</button></div>
+    <div class="cols">
+      <div class="col">
+        <div class="row">
+          <div><b id="laneLbl">Lane view</b><small>Off moves the speed to the centre.</small></div>
+          <button type="button" class="switch" id="laneSwitch" role="switch" aria-checked="true" aria-labelledby="laneLbl"></button>
+        </div>
+        <div class="field">
+          <b id="carLbl">Car</b>
+          <div class="seg" role="radiogroup" aria-labelledby="carLbl" data-key="car">
+            <button type="button" role="radio" data-v="auto">Auto</button><button type="button" role="radio" data-v="3">Model 3</button><button type="button" role="radio" data-v="Y">Model Y</button>
+          </div>
+        </div>
+        <div class="field">
+          <b id="genLbl">Version</b>
+          <div class="seg" role="radiogroup" aria-labelledby="genLbl" data-key="gen">
+            <button type="button" role="radio" data-v="auto">Auto</button><button type="button" role="radio" data-v="legacy">Original</button><button type="button" role="radio" data-v="refresh">Refresh</button>
+          </div>
+          <small>Refresh: Model 3 2024+, Model Y 2025+.</small>
+        </div>
+      </div>
+      <div class="col">
+        <div class="field">
+          <b id="paintLbl">Paint</b>
+          <div class="swatches" role="radiogroup" aria-labelledby="paintLbl" id="swatches"></div>
+          <small id="paintName"></small>
+        </div>
+        <p class="hint" id="detectNote"></p>
+      </div>
+      <div class="col">
+        <div class="field">
+          <b id="warnLbl">Speed warning</b>
+          <div class="seg" role="radiogroup" aria-labelledby="warnLbl" data-key="warn" data-def="ring">
+            <button type="button" role="radio" data-v="off">Off</button><button type="button" role="radio" data-v="display">Speed</button><button type="button" role="radio" data-v="ring" aria-label="Speed and ring">Both</button>
+          </div>
+        </div>
+        <div class="field">
+          <b id="overLbl">Warn above the limit by</b>
+          <div class="seg" role="radiogroup" aria-labelledby="overLbl" data-key="warnOver" data-def="1" id="overSeg">
+            <button type="button" role="radio" data-v="0">+0</button><button type="button" role="radio" data-v="1">+3</button><button type="button" role="radio" data-v="2">+5</button><button type="button" role="radio" data-v="3">+10</button>
+          </div>
+          <small>Amber past this, deeper orange 10 mph (15 km/h) over that.</small>
+        </div>
+        <p class="hint longhint">Long-press the dashboard while stopped to open these settings.</p>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="core.js"></script>
+<script src="three.min.js"></script>
+<script src="car3d.js"></script>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var cv = $("c"), ctx = cv.getContext("2d"), W, H, P = [], idx = {};
+  // the ring is soft light, so it doesn't need the screen's full pixel density
+  var dpr = Math.min(1.5, window.devicePixelRatio || 1);
+  function build() {
+    W = cv.width = innerWidth * dpr; H = cv.height = innerHeight * dpr;
+    var m = Math.min(H, W / 2.1) * 0.03, r = Math.min(H, W) * 0.08, x0 = m, y0 = m, x1 = W - m, y1 = H - m;
+    P = []; idx = {};
+    function line(ax, ay, bx, by) { var n = Math.ceil(Math.hypot(bx - ax, by - ay) / 6); for (var i = 0; i < n; i++) P.push([ax + (bx - ax) * i / n, ay + (by - ay) * i / n]); }
+    function arc(cx, cy, a0) { for (var i = 0; i < 24; i++) { var a = a0 + i / 24 * Math.PI / 2; P.push([cx + Math.cos(a) * r, cy + Math.sin(a) * r]); } }
+    // clockwise from top-centre
+    line(W / 2, y0, x1 - r, y0); arc(x1 - r, y0 + r, -Math.PI / 2);
+    line(x1, y0 + r, x1, H / 2); idx.RM = P.length; line(x1, H / 2, x1, y1 - r); arc(x1 - r, y1 - r, 0);
+    line(x1 - r, y1, W / 2, y1); idx.BC = P.length; line(W / 2, y1, x0 + r, y1); arc(x0 + r, y1 - r, Math.PI / 2);
+    line(x0, y1 - r, x0, H / 2); idx.LM = P.length; line(x0, H / 2, x0, y0 + r); arc(x0 + r, y0 + r, Math.PI);
+    line(x0 + r, y0, W / 2, y0); idx.N = P.length;
+  }
+  build(); addEventListener("resize", build);
+  var reduceMotion = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  function trace(a, b) {
+    var n = idx.N, step = b >= a ? 1 : -1;
+    ctx.beginPath();
+    for (var i = a, first = true; step > 0 ? i <= b : i >= b; i += step) {
+      var p = P[((Math.round(i) % n) + n) % n];
+      first ? ctx.moveTo(p[0], p[1]) : ctx.lineTo(p[0], p[1]); first = false;
+    }
+    ctx.lineCap = "round"; ctx.lineJoin = "round";
+  }
+  function seg(a, b, color, width) {
+    trace(a, b); ctx.strokeStyle = color; ctx.lineWidth = width * dpr; ctx.shadowBlur = 0; ctx.stroke();
+  }
+  function hex(c) { var n = parseInt(c.slice(1), 16); return [n >> 16, n >> 8 & 255, n & 255]; }
+  // lighten a #rrggbb colour toward white; returns #rrggbb so it can be fed back in
+  function mix(c, k) { return "#" + hex(c).map(function (v) { return (256 + Math.round(v + (255 - v) * k)).toString(16).slice(1); }).join(""); }
+  // An LED light-guide look: soft bloom, the coloured strip, then a hot near-white core.
+  // The bloom is stacked wide translucent strokes rather than shadowBlur, which is far
+  // cheaper to draw every frame on a phone.
+  function glow(a, b, color, width, strength, hq) {
+    trace(a, b); ctx.shadowBlur = 0; ctx.strokeStyle = color;
+    if (hq) {
+      var layers = [[7, 0.05], [4.5, 0.08], [2.6, 0.16]];
+      for (var i = 0; i < layers.length; i++) { ctx.globalAlpha = layers[i][1] * strength; ctx.lineWidth = width * layers[i][0] * dpr; ctx.stroke(); }
+    }
+    ctx.globalAlpha = strength; ctx.lineWidth = width * dpr; ctx.stroke();
+    ctx.globalAlpha = 0.8 * strength; ctx.strokeStyle = mix(color, day ? 0.35 : 0.65);
+    ctx.lineWidth = width * 0.34 * dpr; ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+  // bright leading tip for the turn sweep
+  function flare(i, color, radius) {
+    var p = P[((Math.round(i) % idx.N) + idx.N) % idx.N], r = radius * dpr, h = hex(color);
+    var g = ctx.createRadialGradient(p[0], p[1], 0, p[0], p[1], r);
+    g.addColorStop(0, "rgba(255,255,255,.95)"); g.addColorStop(0.25, "rgba(" + h + ",.8)"); g.addColorStop(1, "rgba(" + h + ",0)");
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(p[0], p[1], r, 0, Math.PI * 2); ctx.fill();
+  }
+  function css(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+  function rgba(hex, a) { var n = parseInt(hex.slice(1), 16); return "rgba(" + (n >> 16) + "," + (n >> 8 & 255) + "," + (n & 255) + "," + a + ")"; }
+
+  var setRef = null, setBad = false;
+  var WARN_MPH = [0, 3, 5, 10], WARN_KMH = [0, 5, 10, 15], warnStage = 0, warnBy = 0;
+
+  // ---- settings: the app gives web dashboards one string of storage
+  function loadSettings() {
+    var raw = "";
+    try {
+      if (window.NativeCarState && NativeCarState.getAppData) raw = NativeCarState.getAppData();
+      else if (typeof window.__DASHPILOT_APP_DATA__ === "string") raw = window.__DASHPILOT_APP_DATA__;
+      else raw = localStorage.getItem("halo") || "";
+    } catch (e) {}
+    try { return JSON.parse(raw) || {}; } catch (e) { return {}; }
+  }
+  function saveSettings(o) {
+    var raw = JSON.stringify(o);
+    try {
+      if (window.NativeCarState && NativeCarState.setAppData) NativeCarState.setAppData(raw);
+      else if (window.webkit && webkit.messageHandlers && webkit.messageHandlers.appData) webkit.messageHandlers.appData.postMessage(raw);
+      else localStorage.setItem("halo", raw);
+    } catch (e) {}
+  }
+  var settings = loadSettings();
+  if (location.hash.indexOf("novis") >= 0) settings.laneView = false;
+  function applyLaneView() {
+    var on = settings.laneView !== false;
+    document.body.classList.toggle("novis", !on);
+  }
+  applyLaneView();
+  // demo page buttons switch modes through the hash
+  window.addEventListener("hashchange", function () { settings.laneView = location.hash.indexOf("novis") < 0; applyLaneView(); });
+  function host(androidMethod, iosHandler, value) {
+    try {
+      if (window.NativeCarState && NativeCarState[androidMethod]) { NativeCarState[androidMethod](value); return; }
+      if (window.webkit && webkit.messageHandlers && webkit.messageHandlers[iosHandler]) webkit.messageHandlers[iosHandler].postMessage(value);
+    } catch (e) {}
+  }
+  // Same rules as DashPilot's own Compose editor: 550 ms press, small finger drift
+  // allowed, refuses to open above 3 (and closes itself) so it's never used while driving.
+  var LONG_PRESS_MS = 550, MOVE_TOLERANCE = 8, DRIVING_SPEED = 3, pressTimer = 0, pressAt = null;
+  function driving() { var st = Dash.state; return st.dataSourceType !== "demo" && st.egoSpeed > DRIVING_SPEED; }
+  function openSheet() {
+    if (driving()) return;
+    $("laneSwitch").setAttribute("aria-checked", settings.laneView !== false ? "true" : "false");
+    syncCarUi();
+    $("sheet").hidden = false; host("setEditing", "editing", true);
+    $("laneSwitch").focus();
+  }
+  function closeSheet() {
+    if ($("sheet").hidden) return;
+    $("sheet").hidden = true; host("setEditing", "editing", false);
+  }
+  document.addEventListener("pointerdown", function (e) {
+    if (!$("sheet").hidden) return;
+    pressAt = [e.clientX, e.clientY]; clearTimeout(pressTimer);
+    pressTimer = setTimeout(openSheet, LONG_PRESS_MS);
+  });
+  document.addEventListener("pointermove", function (e) {
+    if (pressAt && Math.hypot(e.clientX - pressAt[0], e.clientY - pressAt[1]) > MOVE_TOLERANCE) { clearTimeout(pressTimer); pressAt = null; }
+  });
+  ["pointerup", "pointercancel"].forEach(function (t) { document.addEventListener(t, function () { clearTimeout(pressTimer); pressAt = null; }); });
+  document.addEventListener("contextmenu", function (e) { e.preventDefault(); });
+  $("laneSwitch").addEventListener("click", function () {
+    settings.laneView = settings.laneView === false;
+    this.setAttribute("aria-checked", settings.laneView ? "true" : "false");
+    applyLaneView(); saveSettings(settings);
+  });
+  // ---- car: model, version and paint (Auto uses what the car reports, if anything)
+  window.HaloSettings = settings;
+  var sw = $("swatches");
+  sw.innerHTML = '<button type="button" role="radio" class="auto" data-v="auto" aria-label="Auto">AUTO</button>' +
+    HaloCar.PAINTS.map(function (p) { return '<button type="button" role="radio" data-v="' + p.id + '" aria-label="' + p.name + '" style="background-color:' + p.hex + '"></button>'; }).join("");
+  function pick(group, key, v) {
+    settings[key] = v; saveSettings(settings); syncCarUi();
+    if (window.HaloCarChanged) window.HaloCarChanged();
+  }
+  [].forEach.call(document.querySelectorAll(".seg"), function (g) {
+    g.addEventListener("click", function (e) { var b = e.target.closest("button"); if (b) pick(g, g.dataset.key, b.dataset.v); });
+  });
+  sw.addEventListener("click", function (e) { var b = e.target.closest("button"); if (b) pick(sw, "paint", b.dataset.v); });
+  function syncCarUi() {
+    [].forEach.call(document.querySelectorAll(".seg"), function (g) {
+      var cur = settings[g.dataset.key] || g.dataset.def || "auto";
+      [].forEach.call(g.children, function (b) { b.setAttribute("aria-checked", b.dataset.v === cur ? "true" : "false"); });
+    });
+    var offs = Dash.state.isImperial === false ? WARN_KMH : WARN_MPH;
+    [].forEach.call($("overSeg").children, function (b, i) { b.textContent = "+" + offs[i]; });
+    $("overSeg").setAttribute("aria-disabled", settings.warn === "off" ? "true" : "false");
+    var cur = settings.paint || "auto";
+    [].forEach.call(sw.children, function (b) { b.setAttribute("aria-checked", b.dataset.v === cur ? "true" : "false"); });
+    var r = HaloCar.resolve(settings, Dash.state), d = r.detected;
+    $("paintName").textContent = HaloCar.paintById(r.paint).name + (cur === "auto" ? (d.paint ? " (from your car)" : " (default)") : "");
+    $("detectNote").textContent = d.model
+      ? "Detected from your car: Model " + d.model + (d.year ? " " + d.year : "") + ". Auto follows it."
+      : "DashPilot doesn't share your car's model, year or paint with dashboards yet. Until it does, Auto means Model 3, Original, Pearl White.";
+  }
+  syncCarUi();
+  // the 2D lane view takes the paint colour too
+  var lastPaint = "";
+  Dash.onFrame(function (s) {
+    var hex = HaloCar.paintById(HaloCar.resolve(settings, s).paint).hex;
+    if (hex === lastPaint) return; lastPaint = hex;
+    var n = parseInt(hex.slice(1), 16), dark = [(n >> 16) * 0.55, (n >> 8 & 255) * 0.55, (n & 255) * 0.55].map(Math.round);
+    document.documentElement.style.setProperty("--car", hex);
+    document.documentElement.style.setProperty("--carEdge", "rgb(" + dark.join(",") + ")");
+  });
+  $("sheetDone").addEventListener("click", closeSheet);
+  $("sheet").addEventListener("click", function (e) { if (e.target === this) closeSheet(); });
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeSheet(); });
+  Dash.onFrame(function () { if (driving()) closeSheet(); });
+  var others = { L: { a: 0 }, R: { a: 0 } };
+  var C = {}, day = null, ap = 0, pw = 0, steer = 0, roll = 0, bl = { l: 0, r: 0 }, signKey = "";
+  var TL = ["", "#FF3B30", "#2FCB6A", "#FFB020"];
+  var gearsEl = $("gears").children;
+
+  Dash.onFrame(function (s, dt, now) {
+    if (day !== !s.darkMode) {
+      day = !s.darkMode; document.documentElement.classList.toggle("day", day);
+      ["--band", "--ap"].forEach(function (k) { C[k] = css(k); });
+    }
+    var hq = s.renderQuality !== 1;
+    ap = Dash.smooth(ap, s.adasOn ? 1 : 0, dt, 4);
+
+    updateWarn(s);
+    // ---- halo (redrawn only while something on it moves or changes)
+    var ringKey = [s.adasOn, s.leftBlinker, s.rightBlinker, s.leftBlindSpot, s.rightBlindSpot, s.trafficLightColor,
+      Math.round(s.stopLineDist), warnStage, settings.warn, Math.round(warnBy), day, W, H].join();
+    var ringMoving = (ap > 0.005 && ap < 0.995) || (s.adasOn && hq && !reduceMotion) || bl.l || bl.r ||
+      s.leftBlindSpot === 2 || s.rightBlindSpot === 2;
+    if (ringMoving || ringKey !== lastRing) { lastRing = ringKey; drawRing(); }
+  });
+  var lastRing = "";
+  // ---- speed warning: amber past the chosen offset, deeper orange 10 mph / 15 km/h further.
+  // A 1-unit hysteresis keeps it from flickering when you hover at a threshold.
+  function updateWarn(s) {
+    var mode = settings.warn || "ring", offs = s.isImperial ? WARN_MPH : WARN_KMH, step = s.isImperial ? 10 : 15;
+    var off = offs[+(settings.warnOver || 1)] || 0, by = s.fusedSpeedLimit > 0 ? s.egoSpeed - s.fusedSpeedLimit - off : -99;
+    var up = by > 0 ? (by > step ? 2 : 1) : 0, down = by > -1 ? (by > step - 1 ? 2 : 1) : 0;
+    warnStage = mode === "off" ? 0 : up > warnStage ? up : Math.min(warnStage, down);
+    warnBy = Math.max(0, by);
+  }
+  function drawRing() {
+    var s = Dash.state, hq = s.renderQuality !== 1, u = Math.min(H, W / 2.1) / dpr / 100, N = idx.N, RM = idx.RM, BC = idx.BC, LM = idx.LM, now = performance.now() / 1000;
+    ctx.clearRect(0, 0, W, H);
+    seg(0, N, C["--band"], u * 1);
+    if (ap > 0.01) {
+      glow(0, N, C["--ap"], u * 0.9, 0.9 * ap, hq);
+      // a slow light that travels round the ring while assist is engaged
+      if (!reduceMotion && hq) { var fp = (now / 6 % 1) * N; glow(fp, fp + N * 0.06, mix(C["--ap"], 0.45), u * 1.1, 0.6 * ap, hq); }
+    }
+    // speed warning on the top edge; held back while a blinker sweeps so the ambers never mix
+    if ((settings.warn || "ring") === "ring" && warnStage && !s.trafficLightColor && !s.leftBlinker && !s.rightBlinker) {
+      var ow = (0.15 + Math.min(1, warnBy / 10) * 0.4) * RM;
+      glow(N - ow, N + ow, warnStage === 2 ? "#FF7A1A" : "#FFB020", u * 1.1, 1, hq);
+    }
+    if (s.trafficLightColor) {
+      var k = s.stopLineDist > 0 ? Math.max(0.12, 1 - s.stopLineDist / 160) : 0.2, tw = k * RM * 0.55, tc = TL[s.trafficLightColor];
+      glow(N - tw, N + tw, tc, u * 1.3, 1, hq);
+    }
+    [["l", s.leftBlinker], ["r", s.rightBlinker]].forEach(function (b) {
+      if (b[1] === 2 && !bl[b[0]]) bl[b[0]] = now;
+      if (b[1] !== 2) bl[b[0]] = 0;
+      if (!bl[b[0]]) return;
+      var f = Math.min(1, (now - bl[b[0]]) / 0.28), c = "#FFB020", e1, e2;
+      if (b[0] === "l") { e1 = N - (N - LM) * f; e2 = BC + (LM - BC) * f; glow(N, e1, c, u * 1.4, 1, hq); glow(BC, e2, c, u * 1.4, 1, hq); }
+      else { e1 = RM * f; e2 = BC - (BC - RM) * f; glow(0, e1, c, u * 1.4, 1, hq); glow(BC, e2, c, u * 1.4, 1, hq); }
+      if (f < 1 && hq) { flare(e1, c, u * 6); flare(e2, c, u * 6); }
+    });
+    var showBs = s.alwaysOnBlindSpotMonitor || s.leftBlinker || s.rightBlinker || s.dataSourceType === "demo";
+    [["l", s.leftBlindSpot, LM], ["r", s.rightBlindSpot, RM]].forEach(function (b) {
+      if (!b[1] || !showBs) return;
+      var a = b[1] === 2 ? 0.55 + 0.45 * Math.sin(now * 20) : 1, half = (BC - RM) * 0.45;
+      glow(b[2] - half, b[2] + half, "#FF3B30", u * 2, a, hq);
+    });
+
+  }
+  Dash.onFrame(function (s, dt, now) {
+    var hq = s.renderQuality !== 1;
+    var showBs = s.alwaysOnBlindSpotMonitor || s.leftBlinker || s.rightBlinker || s.dataSourceType === "demo";
+    // ---- speed + power
+    $("v").textContent = Math.round(s.egoSpeed);
+    $("unit").textContent = s.isImperial ? "MPH" : "KM/H";
+    $("spd").classList.toggle("over", warnStage === 1);
+    $("spd").classList.toggle("over2", warnStage === 2);
+    pw = Dash.smooth(pw, s.powerLevel, dt, 6);
+    // Tesla-style meter: regen fills left of the mark (30%), drive fills right
+    var bar = $("pw");
+    if (pw < 0) { bar.className = "regen"; bar.style.left = (30 - Math.min(1, -pw / 100) * 30) + "%"; bar.style.width = Math.min(1, -pw / 100) * 30 + "%"; }
+    else { bar.className = ""; bar.style.left = "30%"; bar.style.width = Math.min(1, pw / 100) * 70 + "%"; }
+    for (var i = 0; i < 4; i++) gearsEl[i].className = s.gear === i + 1 ? "on" : "";
+
+    // ---- lane view: three lanes that bend with the wheel; our car stays put
+    steer = Dash.smooth(steer, s.egoSteeringAngle, dt, 4);
+    var bend = Math.max(-90, Math.min(90, steer * 7));
+    roll = (roll + s.egoSpeed * dt * 6) % 56;
+    function lane(x) { return "M" + x + " 500 C" + x + " 300 " + (x + bend * .4) + " 160 " + (x + bend) + " 20"; }
+    $("laneL").setAttribute("d", lane(130)); $("laneR").setAttribute("d", lane(270));
+    $("edgeL").setAttribute("d", lane(-8)); $("edgeR").setAttribute("d", lane(408));
+    $("road").setAttribute("d", lane(-8) + " L" + (408 + bend) + " 20 C" + (408 + bend * .4) + " 160 408 300 408 500 Z");
+    $("laneL").style.strokeDashoffset = $("laneR").style.strokeDashoffset = roll;
+    var lc = s.adasOn ? "var(--ap)" : "var(--lane)";
+    $("laneL").style.stroke = $("laneR").style.stroke = lc;
+    $("path").setAttribute("d", "M168 430 C168 300 " + (168 + bend * .4) + " 170 " + (180 + bend) + " 40 L" + (220 + bend) + " 40 C" + (232 + bend * .4) + " 170 232 300 232 430Z");
+    $("path").setAttribute("opacity", ap);
+    // brake lights glow under strong regen, as the car's own lamps do
+    var brake = Math.min(1, Math.max(0, -pw - 15) / 30);
+    $("tail").setAttribute("opacity", 0.55 + 0.45 * brake);
+    $("tailHalo").setAttribute("opacity", 0.15 + 0.85 * brake);
+    // neighbours in the blind spot: slide in from behind, pulse when urgent
+    [["L", s.leftBlindSpot, 62], ["R", s.rightBlindSpot, 338]].forEach(function (o) {
+      var st = others[o[0]], target = showBs && o[1] ? 1 : 0;
+      st.a = Dash.smooth(st.a, target, dt, 6);
+      var y = 430 - 40 * st.a, x = o[2] + bend * Math.pow((500 - y) / 480, 2) * 0.9;
+      var op = st.a * (o[1] === 2 ? 0.7 + 0.3 * Math.sin(now * 20) : 1);
+      var g = $("other" + o[0]);
+      g.setAttribute("transform", "translate(" + x.toFixed(1) + " " + y.toFixed(1) + ")");
+      g.setAttribute("opacity", op.toFixed(3));
+    });
+    var tl = s.trafficLightColor;
+    if (tl && s.stopLineDist > 0) {
+      var sy = 270 - Math.min(150, s.stopLineDist) / 150 * 230;
+      $("stop").setAttribute("opacity", 1);
+      $("stopBar").setAttribute("y", sy); $("stopBar").setAttribute("fill", TL[tl]);
+      $("stopGlow").setAttribute("y", sy - 10.5); $("stopGlow").setAttribute("fill", TL[tl]);
+      $("stopTxt").setAttribute("y", sy - 12);
+      $("stopTxt").textContent = s.isImperial ? Math.round(s.stopLineDist * 3.281) + " ft" : Math.round(s.stopLineDist) + " m";
+    } else $("stop").setAttribute("opacity", 0);
+    var showLight = settings.laneView === false && tl > 0;
+    $("light").hidden = !showLight;
+    if (showLight) {
+      $("lightDot").style.background = TL[tl];
+      $("lightTxt").textContent = s.stopLineDist > 0 ? (s.isImperial ? Math.round(s.stopLineDist * 3.281) + " ft" : Math.round(s.stopLineDist) + " m") : "";
+    }
+
+    // ---- sign: US regulatory plate in mph, European roundel in km/h
+    var key = s.fusedSpeedLimit > 0 ? (s.isImperial ? "us" : "eu") + Math.round(s.fusedSpeedLimit) : "";
+    if (key !== signKey) {
+      signKey = key; var lim = Math.round(s.fusedSpeedLimit);
+      $("sign").innerHTML = !key ? "" : s.isImperial ? '<div class="us"><small>SPEED</small><small>LIMIT</small><b>' + lim + "</b></div>" : '<div class="eu' + (lim >= 100 ? ' wide' : '') + '">' + lim + "</div>";
+    }
+    // Legacy DashKit cars may report a set speed that just mirrors the current speed
+    // (see the TODO in bridge/car/cars/tesla.h). If it follows the speed through a
+    // real change while assist is on, stop trusting it and show the wheel alone.
+    if (s.adasOn) {
+      if (setRef === null) setRef = s.egoSpeed;
+      if (Math.abs(s.accSetSpeed - s.egoSpeed) < 0.6 && Math.abs(s.egoSpeed - setRef) > 4) setBad = true;
+      if (Math.abs(s.accSetSpeed - s.egoSpeed) >= 0.6) setRef = s.egoSpeed;
+    } else setRef = null;
+    $("setv").hidden = setBad;
+    $("setv").textContent = s.adasOn && s.accSetSpeed > 0 ? Math.round(s.accSetSpeed) : "—";
+    $("ap").classList.toggle("on", !!s.adasOn);
+
+    var c = Dash.charge(s);
+    $("battWrap").hidden = c < 0;
+    $("bat").textContent = c; $("battFill").style.width = "calc(" + c + "% - 4px)";
+    $("battFill").style.background = c < 20 ? "var(--stop)" : "";
+    $("clk").textContent = Dash.clock(s);
+    var t = [];
+    if (s.gear === 4 && !s.buckleStatus) t.push("SEATBELT");
+    if (s.anyDoorOpen) t.push("DOOR OPEN");
+    $("tells").textContent = t.join("  ·  ");
+  });
+})();
+</script>
+<script src="lane3d.js"></script>
+</body>
+</html>
