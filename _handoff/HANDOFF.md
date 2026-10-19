@@ -30,13 +30,14 @@ The previous session also had a local clone of `softwiredtech/dashpilot` with br
 |---|---|
 | `index.html` | Layout, light ring (canvas), speed, gear, power + kW, turn arrows, top bar (car battery, phone battery, clock), odometer, sign, Autopilot + set speed, 2D lane-view fallback (SVG), settings sheet, speed-warning logic |
 | `core.js` | Data plumbing: Android `onCarStateUpdate` + `NativeCarState.getX()`, iOS `receiveMessage(state)`. Demo loop **only outside the app** (never fakes a drive in the car). `#day`, `#metric`, `#juniper`, `#novis` URL flags for the demo |
+| `drives.js` | Trip tracking (distance, kWh from pack V×I, regen), trip card on Park, weekly totals and last drive in appData, 0–60 timer (opt-in), parked screensaver with burn-in drift, the Drives tab |
 | `lane3d.js` | three.js chase-camera lane view: bending lanes, scrolling dashes, Autopilot path, neighbours in blind spots, stop line + distance label, brake glow. Falls back to the SVG view without WebGL or when `renderQuality === 1` |
 | `car3d.js` | The car, built in code: lofted body from Model 3 / Model Y profiles, lamps as strips on the surface (legacy wrap lamps, Highland C lamps, Juniper light bar), wheels, mirrors, paints, `HaloCar.resolve()` (settings + VIN / paint auto-detect) |
 | `three.min.js` + `LICENSE-three.txt` | three.js r160 UMD build (MIT), from npm |
 | `fonts/montserrat-var.woff2` + `fonts/OFL.txt` | Montserrat (SIL OFL) |
 | `manifest.json`, `README.md`, `preview.jpg` | Contest metadata. README has the credits and the data used |
 
-Size: about 0.79 MB without `preview.jpg`. The limit is 5 MB. It makes no network requests (checked: 6 requests at runtime, all local).
+Size: about 0.81 MB without `preview.jpg`. The limit is 5 MB. It makes no network requests (checked: 6 requests at runtime, all local).
 
 ## Features (all user-visible)
 
@@ -44,6 +45,8 @@ Size: about 0.79 MB without `preview.jpg`. The limit is 5 MB. It makes no networ
 - **Middle:** big speed (Montserrat), P R N D stack, power bar + kW (green regen), green turn arrows either side of the speed, US or EU speed-limit sign by units, Autopilot wheel + set speed.
 - **Edges:** car battery (top left), phone battery + clock (top right), odometer (bottom left), seatbelt/door warnings (bottom centre). Each follows the app's Show car battery / Show phone battery / Show odometer settings (default on).
 - **Settings (long-press ~0.55 s while stopped):** Lane view on/off · Car (Auto / Model 3 / Model Y) · Version (Auto / Original / Refresh) · Paint (Auto + 12 Tesla paints) · Speed warning (Off / Speed / Both) · Warn above limit by +0/+3/+5/+10 mph (+0/+5/+10/+15 km/h). Saved via `NativeCarState.setAppData` / `webkit.messageHandlers.appData`, with localStorage as the fallback when loaded by URL.
+- **Drives (`drives.js`):** trip card on Park, this week's totals, optional 0–60 timer, parked screensaver after 60 s. The Drives tab in settings shows the drive in progress (so it has something to show in DashPilot's Demo, which never parks) or the last drive, plus switches.
+- **Ring cues (index.html):** Autopilot-off drain (assist drops out above 3 mph) and the green-light nudge (stopped on red → green, still stopped 2 s later).
 - **Long-press:** judged per frame and on release (not one timer), backed by touch events, survives a native gesture cancelling the pointer. A blue ring fills under the finger. Above 3 mph (non-demo) it shows "Settings open when you're stopped" instead.
 
 ## Decisions and constraints worth knowing
@@ -67,9 +70,12 @@ Node + Playwright scripts. They use `/opt/node-tools/node_modules/playwright` an
 - `bridge.js`: fake iOS + Android bridges; demo stays off in the app; settings open.
 - `touch.js`: real touch events: hold, short tap, overloaded page, cancelled touch, driving notice.
 - `lp.js`, `warn.js`, `net.js`: long-press + lane-view persistence, speed-warning thresholds, no network requests.
+- `drivetest.js`: launch timer, AP-off drain, green-light nudge, trip card, appData save, Drives tab, screensaver + wake (~90 s).
 - `shot.js`: demo-time screenshots (set `HASH=#day` etc).
 
-Software WebGL is slow here, so don't trust frame rates measured headlessly, and give long-press tests ≥1.5 s.
+Software WebGL is slow here, so don't trust frame rates measured headlessly, and give long-press tests ≥1.5 s. `touch.js`'s "short tap" case reports open under headless load; a real 400 ms tap stays shut, so it's the harness being slow, not a bug.
+
+DashPilot's own Demo data source is always in Drive with Autopilot on, so the trip card, screensaver and AP-off cue never appear on a recording made with it. The Drives tab shows the live drive instead. The browser demo (66 s loop) does park and drop Autopilot.
 
 ## Publishing an update
 

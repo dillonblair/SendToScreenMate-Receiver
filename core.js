@@ -7,7 +7,7 @@
     "leftBlinker", "rightBlinker", "anyDoorOpen", "buckleStatus", "odometer", "adasOn",
     "accSetSpeed", "fusedSpeedLimit", "leftBlindSpot", "rightBlindSpot", "trafficLightColor",
     "stopLineDist", "changingLane", "nominalEnergyRemaining", "fullPackEnergy", "energyBuffer",
-    "powerLevel", "maxRegenPower", "maxDischargePower", "packTMin", "packTMax",
+    "powerLevel", "maxRegenPower", "maxDischargePower", "packTMin", "packTMax", "packVoltage", "packCurrent",
     "showPhoneBattery", "showCarBattery", "showOdometer",
     // not sent to dash apps today; read if a future DashPilot adds them
     "vin", "exteriorColor"];
@@ -36,9 +36,9 @@
   window.onCarStateUpdate = function () { merge(fromAndroid()); };
   window.receiveMessage = function (s) { if (s) merge(s); };
 
-  // ---- demo loop (48 s): pull away, cruise on assist, lane change with a car in
-  // the blind spot, then brake to a red light and wait for green.
-  var L = 48;
+  // ---- demo loop (66 s): pull away, cruise on assist, lane change with a car in
+  // the blind spot, brake to a red light and wait for green, then park.
+  var L = 66;
   function ease(x) { x = Math.max(0, Math.min(1, x)); return x * x * (3 - 2 * x); }
   function speedAt(t) {
     t = ((t % L) + L) % L;
@@ -46,6 +46,9 @@
     if (t < 13) return 68 * (1 - Math.pow(1 - (t - 3) / 10, 2));
     if (t < 31) return 68 + 2 * ease((t - 15) / 3) + Math.sin(t * 0.9) * 0.4;
     if (t < 41) return 70 * (1 - ease((t - 31) / 10));
+    if (t < 46.5) return 0;                                  // green at 44: still waiting at 46
+    if (t < 52) return 25 * ease((t - 46.5) / 5.5);
+    if (t < 56) return 25 * (1 - ease((t - 52) / 4));
     return 0;
   }
   function blink(t, t0) { return Math.floor((t - t0) * 2.8) % 2 ? 1 : 2; }
@@ -55,16 +58,16 @@
     var s = {
       currentTime: Date.now(), phoneBattery: 82, isImperial: state.__demoMetric ? false : true,
       darkMode: state.__demoLight ? false : true, renderQuality: 3, dataSourceType: "demo",
-      egoSpeed: Math.round(v), gear: t < 1.5 ? 1 : 4, buckleStatus: 1, anyDoorOpen: 0,
+      egoSpeed: Math.round(v), gear: t < 1.5 || t >= 56 ? 1 : 4, buckleStatus: 1, anyDoorOpen: 0,
       odometer: 18452 + Math.floor(ms / 60000),
       egoSteeringAngle: Math.sin(t * 0.5) * 3, leftBlinker: 0, rightBlinker: 0,
       leftBlindSpot: 0, rightBlindSpot: 0, changingLane: false,
       adasOn: t > 15 && t < 31.5, accSetSpeed: t > 15 && t < 31.5 ? 70 : 0,
       fusedSpeedLimit: t < 11 || t > 33 ? 45 : 65,
-      trafficLightColor: t < 8 ? 2 : t > 46 ? 2 : t > 31 ? 1 : 0,
+      trafficLightColor: t < 8 ? 2 : t > 44 ? (t < 50 ? 2 : 0) : t > 31 ? 1 : 0,
       stopLineDist: 0,
       nominalEnergyRemaining: 57.9 - t * 0.004, fullPackEnergy: 75, energyBuffer: 3,
-      powerLevel: v < 0.5 && acc === 0 ? 0 : acc > 0.05 ? Math.min(100, acc * 9 + v * 0.18) : acc < -0.05 ? Math.max(-100, acc * 14) : v * 0.18,
+      powerLevel: v < 0.5 && acc === 0 ? 0 : acc > 0.05 ? Math.min(100, acc * 4 + v * 0.08) : acc < -0.05 ? Math.max(-100, acc * 10) : v * 0.08,
       maxRegenPower: 78, maxDischargePower: 310, packTMin: 76, packTMax: 81
     };
     if (state.__demoMetric) { s.egoSpeed = Math.round(v * 1.609); s.fusedSpeedLimit = t < 11 || t > 33 ? 70 : 100; s.accSetSpeed = s.accSetSpeed ? 110 : 0; }
@@ -73,7 +76,7 @@
     if (t > 23 && t < 25.5) { s.changingLane = true; s.egoSteeringAngle = -9 * Math.sin((t - 23) / 2.5 * Math.PI); }
     if (t > 27.5 && t < 30) s.rightBlinker = blink(t, 27.5);
     if (t > 31 && t < 41) s.stopLineDist = Math.max(2, 150 * (1 - ease((t - 31) / 10) * 0.99));
-    if (t >= 41 && t < 46) s.stopLineDist = 2;
+    if (t >= 41 && t <= 44) s.stopLineDist = 2;
     // Juniper: DAS_road is static, so no traffic light or stop line comes through
     if (state.__demoJuniper) { s.trafficLightColor = 0; s.stopLineDist = 0; }
     return s;
