@@ -598,7 +598,7 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
     // ---- halo (redrawn only while something on it moves or changes)
     var ringKey = [s.adasOn, s.leftBlinker, s.rightBlinker, s.leftBlindSpot, s.rightBlindSpot, s.trafficLightColor,
       Math.round(s.stopLineDist), warnStage, settings.warn, Math.round(warnBy), day, W, H, saving].join();
-    var ringMoving = (ap > 0.005 && ap < 0.995) || (s.adasOn && hq && !reduceMotion) || bl.l || bl.r ||
+    var ringMoving = (ap > 0.005 && ap < 0.995) || bl.l || bl.r ||
       s.leftBlindSpot === 2 || s.rightBlindSpot === 2 || drainT || nudgeT || (saving && !reduceMotion);
     if (ringMoving || ringKey !== lastRing) { lastRing = ringKey; drawRing(); }
   });
@@ -633,8 +633,6 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
     }
     if (ap > 0.01) {
       glow(0, N, C["--ap"], u * 0.9, 0.9 * ap, hq);
-      // a slow light that travels round the ring while assist is engaged
-      if (!reduceMotion && hq) { var fp = (now / 6 % 1) * N; glow(fp, fp + N * 0.06, mix(C["--ap"], 0.45), u * 1.1, 0.6 * ap, hq); }
     }
     // speed warning on the top edge; held back while a blinker sweeps so the ambers never mix
     if ((settings.warn || "ring") === "ring" && warnStage && !s.trafficLightColor && !s.leftBlinker && !s.rightBlinker) {

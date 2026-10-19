@@ -41,7 +41,7 @@ Size: about 0.81 MB without `preview.jpg`. The limit is 5 MB. It makes no networ
 
 ## Features (all user-visible)
 
-- **Light ring:** Autopilot blue (plus a slow travelling light); amber turn sweep with a bright tip; red blind-spot edge (pulses when urgent); red light ahead grows along the top (legacy cars only); speed-warning amber / deeper orange on top.
+- **Light ring:** Autopilot blue (steady: no travelling light, Dillon found it distracting); amber turn sweep with a bright tip; red blind-spot edge (pulses when urgent); red light ahead grows along the top (legacy cars only); speed-warning amber / deeper orange on top.
 - **Middle:** big speed (Montserrat), P R N D stack, power bar + kW (green regen), green turn arrows either side of the speed, US or EU speed-limit sign by units, Autopilot wheel + set speed.
 - **Edges:** car battery (top left), phone battery + clock (top right), odometer (bottom left), seatbelt/door warnings (bottom centre). Each follows the app's Show car battery / Show phone battery / Show odometer settings (default on).
 - **Settings (long-press ~0.55 s while stopped):** Lane view on/off · Car (Auto / Model 3 / Model Y) · Version (Auto / Original / Refresh) · Paint (Auto + 12 Tesla paints) · Speed warning (Off / Speed / Both) · Warn above limit by +0/+3/+5/+10 mph (+0/+5/+10/+15 km/h). Saved via `NativeCarState.setAppData` / `webkit.messageHandlers.appData`, with localStorage as the fallback when loaded by URL.
