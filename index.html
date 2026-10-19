@@ -26,7 +26,7 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink); 
   -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; transition: background .5s, color .5s; }
 canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
 .wrap { position: absolute; inset: calc(var(--u) * 7) calc(var(--u) * 8); display: grid;
-  grid-template-columns: auto 1fr 1.25fr auto; align-items: center; gap: calc(var(--u) * 6); }
+  grid-template-columns: auto 1.35fr 0.8fr auto; align-items: center; gap: calc(var(--u) * 6); }
 
 /* gear stack, like the top-left of the Tesla screen */
 .gears { display: grid; gap: calc(var(--u) * 1.6); font-weight: 600; font-size: calc(var(--u) * 5.4); color: var(--faint); text-align: center; }
@@ -55,15 +55,15 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
 .novis .speed b { font-size: calc(var(--u) * 46); }
 .novis .power { max-width: calc(var(--u) * 72); }
 :root.day #beams { display: none; }
-.viz { position: relative; }
-.viz #gl { display: none; position: static; inset: auto; width: 100%; height: calc(var(--u) * 70); }
+.viz { position: relative; justify-self: end; width: 100%; margin-right: calc(var(--u) * -3); }
+.viz #gl { display: none; position: static; inset: auto; width: 100%; height: calc(var(--u) * 54); }
 .viz.gl #gl { display: block;
   -webkit-mask-image: radial-gradient(ellipse 50% 50% at 50% 50%, #000 55%, transparent 100%);
   mask-image: radial-gradient(ellipse 50% 50% at 50% 50%, #000 55%, transparent 100%); }
 .viz.gl svg { display: none; }
 #gllabel { position: absolute; transform: translate(-50%, -100%); font-weight: 600; font-size: calc(var(--u) * 3.6);
   color: var(--ink); text-shadow: 0 1px 6px var(--bg); pointer-events: none; white-space: nowrap; }
-.viz svg { width: 100%; height: calc(var(--u) * 70); display: block; overflow: visible; }
+.viz svg { width: 100%; height: calc(var(--u) * 54); display: block; overflow: visible; }
 
 .side { display: grid; justify-items: center; gap: calc(var(--u) * 5); min-width: calc(var(--u) * 20); }
 .us { background: #fff; color: #111; border: calc(var(--u) * .7) solid #111; outline: calc(var(--u) * .5) solid #fff;
