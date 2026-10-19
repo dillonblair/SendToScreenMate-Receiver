@@ -6,7 +6,7 @@ Halo is the cluster a Model 3 or Model Y never had, for the legacy cars (2019–
 
 ## The 3D car
 
-Everything is built in code with three.js, so there are no model files or textures to license. The body is lofted from 96 cross-sections using published Model 3 / Model Y dimensions, with wheel arches, multi-spoke rims, tyres, brake discs and calipers, mirrors, flush door handles, a glass roof, plate and per-generation lamps (legacy wrap-around units, the Highland's slim C lamps, the Juniper's full-width light bar). Paint and glass are clear-coated materials reflecting a small built-in studio. If WebGL isn't available, or the app's render quality is set to its lowest, Halo shows a flat 2D lane view instead, tinted to your paint.
+Everything is built in code with three.js, so there are no model files or textures to license. The body is one smooth surface lofted between side, plan and belt-line profiles drawn from published Model 3 / Model Y dimensions: the bullet nose, raked windscreen, glass roof running into the long rear glass, short deck, rounded tail and wide rear hips. Glass and black trim are regions of that surface, and the lamps are laid onto it as smooth strips that follow the bodywork: the original cars' wrap-around tail lamps, the Highland's slim C lamps and the Juniper's full-width light bar, plus swept headlights. Wheels have multi-spoke rims, tyres, discs and calipers, and there are door mirrors, flush handles, a plate and the trunk shut line. Paint and glass are clear-coated materials reflecting a small built-in studio. If WebGL isn't available, or the app's render quality is set to its lowest, Halo shows a flat 2D lane view instead, tinted to your paint.
 
 ## Settings
 
