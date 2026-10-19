@@ -8,6 +8,7 @@
     "accSetSpeed", "fusedSpeedLimit", "leftBlindSpot", "rightBlindSpot", "trafficLightColor",
     "stopLineDist", "changingLane", "nominalEnergyRemaining", "fullPackEnergy", "energyBuffer",
     "powerLevel", "maxRegenPower", "maxDischargePower", "packTMin", "packTMax",
+    "showPhoneBattery", "showCarBattery", "showOdometer",
     // not sent to dash apps today; read if a future DashPilot adds them
     "vin", "exteriorColor"];
 
@@ -15,6 +16,7 @@
   KEYS.forEach(function (k) { state[k] = 0; });
   state.darkMode = true;
   state.vin = ""; state.exteriorColor = -1;   // "not reported": 0 is a real paint code
+  state.showPhoneBattery = state.showCarBattery = state.showOdometer = true;   // the app's defaults
   var lastLive = 0;
   // demo-only switches from the URL hash, e.g. index.html#day or #metric
   function readHash() { var h = location.hash; state.__demoLight = h.indexOf("day") >= 0; state.__demoMetric = h.indexOf("metric") >= 0; state.__demoJuniper = h.indexOf("juniper") >= 0; }

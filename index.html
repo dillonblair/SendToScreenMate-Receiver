@@ -86,6 +86,21 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
 .batt .cell { position: relative; width: calc(var(--u) * 7); height: calc(var(--u) * 3.2); border: 2px solid var(--dim); border-radius: 4px; box-sizing: border-box; }
 .batt .cell:after { content: ""; position: absolute; right: calc(var(--u) * -1); top: 28%; bottom: 28%; width: calc(var(--u) * .6); background: var(--dim); border-radius: 0 2px 2px 0; }
 .batt .cell i { position: absolute; left: 2px; top: 2px; bottom: 2px; background: var(--ink); border-radius: 2px; }
+.top .right { display: flex; align-items: center; gap: calc(var(--u) * 4); }
+.phone { display: flex; align-items: center; gap: calc(var(--u) * 1.2); }
+.phone svg { width: calc(var(--u) * 2.4); height: calc(var(--u) * 4); }
+.odo { position: absolute; left: calc(var(--u) * 10); bottom: calc(var(--u) * 6.5); font-weight: 600; font-size: calc(var(--u) * 3.6); color: var(--dim); }
+.odo small { font-size: .75em; letter-spacing: .12em; }
+.odo span { color: var(--ink); opacity: .75; }
+.speed { position: relative; }
+.kw { margin-top: calc(var(--u) * 1.8); font-weight: 600; font-size: calc(var(--u) * 3.6); color: var(--dim); }
+.kw span { color: var(--ink); }
+.kw.regen span { color: var(--regen); }
+/* turn telltales either side of the speed: dim until the lamp is lit */
+.turn { position: absolute; top: calc(var(--u) * 10); width: calc(var(--u) * 7); height: calc(var(--u) * 7); fill: var(--regen); opacity: .1; transition: opacity .08s; }
+.turn.l { left: 0; } .turn.r { right: 0; }
+.turn.on { opacity: 1; filter: drop-shadow(0 0 calc(var(--u) * 1.5) rgba(47,203,106,.7)); }
+:root.day .turn.on { filter: none; }
 .tells { position: absolute; bottom: calc(var(--u) * 6); left: 50%; transform: translateX(-50%); display: flex; gap: calc(var(--u) * 3);
   font-weight: 700; font-size: calc(var(--u) * 3.4); color: var(--stop); letter-spacing: .08em; }
 .light { display: flex; align-items: center; gap: calc(var(--u) * 1.4); font-weight: 600; font-size: calc(var(--u) * 4.4); }
@@ -157,14 +172,21 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
 <canvas id="c"></canvas>
 <div class="top">
   <div class="batt" id="battWrap"><div class="cell"><i id="battFill"></i></div><span><span id="bat">—</span>%</span></div>
-  <div id="clk">—</div>
+  <div class="right">
+    <div class="phone" id="phoneWrap"><svg viewBox="0 0 12 20" aria-hidden="true"><rect x="1" y="1" width="10" height="18" rx="2.2" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="3.2" y="4" width="5.6" id="phoneFill" rx="0.6" fill="currentColor"/></svg><span><span id="phone">—</span>%</span></div>
+    <div id="clk">—</div>
+  </div>
 </div>
+<div class="odo" id="odoWrap"><small>ODO</small> <span id="odo">—</span> <small id="odoUnit">mi</small></div>
 <div class="wrap">
   <div class="gears" id="gears"><span>P</span><span>R</span><span>N</span><span>D</span></div>
   <div class="speed" id="spd">
     <b id="v">0</b>
     <div class="unit" id="unit">MPH</div>
     <div class="power"><i id="pw"></i></div>
+    <div class="kw" id="kwWrap"><span id="kw">0</span> kW</div>
+    <svg class="turn l" id="turnL" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 4 2 12l8 8v-5h12V9H10z"/></svg>
+    <svg class="turn r" id="turnR" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4l8 8-8 8v-5H2V9h12z"/></svg>
   </div>
   <div class="viz">
     <canvas id="gl"></canvas><div id="gllabel" hidden></div>
@@ -561,6 +583,13 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
     if (pw < 0) { bar.className = "regen"; bar.style.left = (30 - Math.min(1, -pw / 100) * 30) + "%"; bar.style.width = Math.min(1, -pw / 100) * 30 + "%"; }
     else { bar.className = ""; bar.style.left = "30%"; bar.style.width = Math.min(1, pw / 100) * 70 + "%"; }
     for (var i = 0; i < 4; i++) gearsEl[i].className = s.gear === i + 1 ? "on" : "";
+    // power in kW (regen negative, in green), from the share of the current limit
+    var kw = pw >= 0 ? pw / 100 * (s.maxDischargePower || 0) : pw / 100 * (s.maxRegenPower || 0);
+    $("kwWrap").hidden = !(s.maxDischargePower > 0 || s.maxRegenPower > 0);
+    $("kw").textContent = Math.round(kw);
+    $("kwWrap").classList.toggle("regen", kw < -0.5);
+    $("turnL").classList.toggle("on", s.leftBlinker === 2);
+    $("turnR").classList.toggle("on", s.rightBlinker === 2);
 
     // ---- lane view: three lanes that bend with the wheel; our car stays put
     steer = Dash.smooth(steer, s.egoSteeringAngle, dt, 4);
@@ -624,10 +653,17 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
     $("ap").classList.toggle("on", !!s.adasOn);
 
     var c = Dash.charge(s);
-    $("battWrap").hidden = c < 0;
+    $("battWrap").hidden = c < 0 || !s.showCarBattery;
     $("bat").textContent = c; $("battFill").style.width = "calc(" + c + "% - 4px)";
     $("battFill").style.background = c < 20 ? "var(--stop)" : "";
     $("clk").textContent = Dash.clock(s);
+    var ph = s.phoneBattery;
+    $("phoneWrap").hidden = !s.showPhoneBattery || !(ph >= 0);
+    $("phone").textContent = Math.round(ph);
+    $("phoneFill").setAttribute("height", Math.max(0.5, 12 * ph / 100)); $("phoneFill").setAttribute("y", 4 + 12 * (1 - ph / 100));
+    $("odoWrap").hidden = !s.showOdometer || !(s.odometer > 0);
+    $("odo").textContent = Math.round(s.odometer).toLocaleString("en-US");
+    $("odoUnit").textContent = s.isImperial ? "mi" : "km";
     var t = [];
     if (s.gear === 4 && !s.buckleStatus) t.push("SEATBELT");
     if (s.anyDoorOpen) t.push("DOOR OPEN");
