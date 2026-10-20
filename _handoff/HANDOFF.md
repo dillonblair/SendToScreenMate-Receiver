@@ -9,7 +9,7 @@ Halo is a DashPilot **dash app contest entry** (web category). Contest rules:
 | What | Where |
 |---|---|
 | **The entry (source of truth)** | Branch `halo-dashboard` of `dillonblair/SendToScreenMate-Receiver` (repo root, everything except `_handoff/` and `.nojekyll`) |
-| Live URL to load in DashPilot | <https://raw.githack.com/dillonblair/sendtoscreenmate-receiver/halo-dashboard/index.html> (updates a few minutes after each push) |
+| Live URL to load in DashPilot (use this one consistently: settings and drives are stored per site, so `rawcdn.githack.com` commit links start empty) | <https://raw.githack.com/dillonblair/sendtoscreenmate-receiver/halo-dashboard/index.html> (updates a few minutes after each push) |
 | This handoff, test scripts, PR text, Blender script | `_handoff/` on the same branch. **Not part of the entry.** |
 | Showcase page (private to Dillon's Claude account) | <https://claude.ai/artifact/JBykfPgMoY8qSgK7d1cf1p> |
 
@@ -71,6 +71,7 @@ Node + Playwright scripts. They use `/opt/node-tools/node_modules/playwright` an
 - `bridge.js`: fake iOS + Android bridges; demo stays off in the app; settings open.
 - `touch.js`: real touch events: hold, short tap, overloaded page, cancelled touch, driving notice.
 - `lp.js`, `warn.js`, `net.js`: long-press + lane-view persistence, speed-warning thresholds, no network requests.
+- `persist.js`: settings + drives survive a reload when loaded by URL (Android's `setAppData` is a no-op and iOS has no `appData` handler for URL apps, so Halo also writes localStorage).
 - `brightness.js`: `--bk` and ring brightness for fixed / Auto-by-sun / Auto-by-dark-mode, hazards stay full, tab screenshots. Usage: `node brightness.js /abs/index.html outdir`.
 - `drivetest.js`: launch timer, AP-off drain, green-light nudge, trip card, appData save, Drives tab, screensaver + wake (~90 s).
 - `shot.js`: demo-time screenshots (set `HASH=#day` etc).

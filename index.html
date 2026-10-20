@@ -464,14 +464,17 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
   var setRef = null, setBad = false;
   var WARN_MPH = [0, 3, 5, 10], WARN_KMH = [0, 5, 10, 15], warnStage = 0, warnBy = 0;
 
-  // ---- settings: the app gives web dashboards one string of storage
+  // ---- settings: the app gives web dashboards one string of storage. Only bundled apps
+  // get it: loaded from a URL, Android's setAppData quietly drops the data and iOS has no
+  // handler. So everything is also kept in the page's own localStorage, which is used
+  // whenever the app hands back nothing.
   function loadSettings() {
     var raw = "";
     try {
-      if (window.NativeCarState && NativeCarState.getAppData) raw = NativeCarState.getAppData();
+      if (window.NativeCarState && NativeCarState.getAppData) raw = NativeCarState.getAppData() || "";
       else if (typeof window.__DASHPILOT_APP_DATA__ === "string") raw = window.__DASHPILOT_APP_DATA__;
-      else raw = localStorage.getItem("halo") || "";
     } catch (e) {}
+    try { if (!raw) raw = localStorage.getItem("halo") || ""; } catch (e) {}
     try { return JSON.parse(raw) || {}; } catch (e) { return {}; }
   }
   function saveSettings(o) {
@@ -479,8 +482,8 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
     try {
       if (window.NativeCarState && NativeCarState.setAppData) NativeCarState.setAppData(raw);
       else if (window.webkit && webkit.messageHandlers && webkit.messageHandlers.appData) webkit.messageHandlers.appData.postMessage(raw);
-      else localStorage.setItem("halo", raw);
     } catch (e) {}
+    try { localStorage.setItem("halo", raw); } catch (e) {}
   }
   var settings = loadSettings();
   window.HaloSave = function () { saveSettings(settings); };
