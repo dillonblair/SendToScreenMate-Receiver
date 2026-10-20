@@ -199,7 +199,7 @@
     });
 
     // stop line ahead for a light we know about (legacy cars)
-    var tl = s.trafficLightColor, show = tl > 0 && s.stopLineDist > 0;
+    var tl = (window.HaloSettings || {}).stopLine === false ? 0 : s.trafficLightColor, show = tl > 0 && s.stopLineDist > 0;
     stop.visible = stopGlow.visible = show;
     if (show) {
       var sz = -(4 + Math.min(150, s.stopLineDist) / 150 * 34);

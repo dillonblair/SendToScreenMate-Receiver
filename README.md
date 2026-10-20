@@ -25,6 +25,7 @@ Long-press the dashboard to open Halo's settings, parked or on the move (handy f
 - **Car:** Auto, Model 3 or Model Y.
 - **Version:** Auto, Original, or Refresh (2024+ Model 3 Highland, 2025+ Model Y Juniper).
 - **Paint:** Auto or one of twelve Tesla paints.
+- **Traffic lights:** on by default. Turn it off to hide the light ahead everywhere: the bar along the top of the ring, the stop line and distance in the lane view, and the light readout when the lane view is off.
 - **Speed warning:** Off, Speed (the number changes colour) or Both (the top of the ring lights too).
 - **Warn above the limit by:** +0, +3, +5 or +10 mph (+0, +5, +10 or +15 km/h). Past that the speed turns amber, and 10 mph / 15 km/h further it turns a deeper orange. A one-unit margin stops it flickering at the threshold. Red is never used for speed, because on Halo red means a car in your blind spot or a red light.
 
