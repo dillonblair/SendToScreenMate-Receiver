@@ -10,8 +10,8 @@ const { chromium } = require('/opt/node-tools/node_modules/playwright');
  await p.click('#laneSwitch'); console.log('after switch', await p.evaluate(() => [document.body.className, localStorage.getItem('halo')]));
  await p.click('#sheetDone'); console.log('closed?', await p.evaluate(() => document.getElementById('sheet').hidden));
  await p.reload(); await p.waitForTimeout(300); console.log('reload', await p.evaluate(() => document.body.className));
- // live data driving: should refuse
+ // live data driving: opens too (no speed lock)
  await p.evaluate(() => window.receiveMessage({ egoSpeed: 40, dataSourceType: 'dashkit', gear: 4 }));
  await p.mouse.down(); await p.waitForTimeout(2000); await p.mouse.up();
- console.log('open while driving?', await p.evaluate(() => !document.getElementById('sheet').hidden));
+ console.log('open while driving? (expect true)', await p.evaluate(() => !document.getElementById('sheet').hidden));
  await b.close(); })();

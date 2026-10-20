@@ -15,6 +15,9 @@
   --car: #E9EBEE; --carEdge: #8E949C; --glass: #1A1D23; --lane: #4A4F57; --road: #15181D; --other: #5E646D;
   --ap: #3D7BFF; --regen: #2FCB6A; --turn: #FFB020; --over: #FFB020; --over2: #FF7A1A; --stop: #FF3B30;
   --u: min(1vh, 0.54vw);
+  /* iPhone notch / Dynamic Island: DashPilot draws dash apps edge to edge, so keep clear
+     of the safe area on both sides (the same on both so the layout stays centred) */
+  --sx: max(env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px));
 }
 :root.day {
   --bg: #F1F2F4; --ink: #171A20; --dim: #8A8F98; --faint: #D3D6DB; --band: #DADDE2;
@@ -25,7 +28,7 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink); 
   font-family: "Montserrat", system-ui, sans-serif; font-variant-numeric: tabular-nums;
   -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; transition: background .5s, color .5s; }
 canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
-.wrap { position: absolute; inset: calc(var(--u) * 7) calc(var(--u) * 8); display: grid;
+.wrap { position: absolute; inset: calc(var(--u) * 7) calc(var(--u) * 8 + var(--sx)); display: grid;
   grid-template-columns: auto 1.35fr 0.8fr auto; align-items: center; gap: calc(var(--u) * 6); }
 
 /* gear stack, like the top-left of the Tesla screen */
@@ -80,7 +83,7 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
 .ap b { font-weight: 600; font-size: calc(var(--u) * 7); }
 .ap.on { color: var(--ap); }
 
-.top { position: absolute; top: calc(var(--u) * 6.5); left: calc(var(--u) * 10); right: calc(var(--u) * 10);
+.top { position: absolute; top: calc(var(--u) * 6.5); left: calc(var(--u) * 10 + var(--sx)); right: calc(var(--u) * 10 + var(--sx));
   display: flex; justify-content: space-between; font-weight: 600; font-size: calc(var(--u) * 3.6); color: var(--dim); }
 .batt { display: flex; align-items: center; gap: calc(var(--u) * 1.4); }
 .batt .cell { position: relative; width: calc(var(--u) * 7); height: calc(var(--u) * 3.2); border: 2px solid var(--dim); border-radius: 4px; box-sizing: border-box; }
@@ -89,7 +92,7 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
 .top .right { display: flex; align-items: center; gap: calc(var(--u) * 4); }
 .phone { display: flex; align-items: center; gap: calc(var(--u) * 1.2); }
 .phone svg { width: calc(var(--u) * 2.4); height: calc(var(--u) * 4); }
-.odo { position: absolute; left: calc(var(--u) * 10); bottom: calc(var(--u) * 6.5); font-weight: 600; font-size: calc(var(--u) * 3.6); color: var(--dim); }
+.odo { position: absolute; left: calc(var(--u) * 10 + var(--sx)); bottom: calc(var(--u) * 6.5); font-weight: 600; font-size: calc(var(--u) * 3.6); color: var(--dim); }
 .odo small { font-size: .75em; letter-spacing: .12em; }
 .odo span { color: var(--ink); opacity: .75; }
 .speed { position: relative; }
@@ -105,7 +108,7 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
   font-weight: 700; font-size: calc(var(--u) * 3.4); color: var(--stop); letter-spacing: .08em; }
 .light { display: flex; align-items: center; gap: calc(var(--u) * 1.4); font-weight: 600; font-size: calc(var(--u) * 4.4); }
 .light i { width: calc(var(--u) * 3.2); height: calc(var(--u) * 3.2); border-radius: 50%; display: block; }
-/* settings sheet: long-press the dash while stopped */
+/* settings sheet: long-press the dash */
 .sheet { position: absolute; inset: 0; display: grid; place-items: center; background: rgba(0,0,0,.55); z-index: 5; }
 .sheet .card { width: min(88vw, calc(var(--u) * 120)); background: var(--bg); color: var(--ink); border: 1px solid var(--faint);
   border-radius: calc(var(--u) * 4); padding: calc(var(--u) * 6); display: grid; gap: calc(var(--u) * 4); box-shadow: 0 20px 60px rgba(0,0,0,.5); }
@@ -123,7 +126,7 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
   border: 0; border-radius: calc(var(--u) * 2); padding: calc(var(--u) * 2.4) calc(var(--u) * 6); min-height: 44px; cursor: pointer; }
 .switch:focus-visible, .sheet .done:focus-visible { outline: 2px solid var(--ap); outline-offset: 3px; }
 .sheet .hint { color: var(--dim); font-size: calc(var(--u) * 3); margin: 0; }
-.sheet .card { width: min(94vw, calc(var(--u) * 175)); max-height: calc(100% - var(--u) * 4); overflow: auto; box-sizing: border-box; }
+.sheet .card { width: min(94vw - 2 * var(--sx), calc(var(--u) * 175)); max-height: calc(100% - var(--u) * 4); overflow: auto; box-sizing: border-box; }
 .cols { display: grid; grid-template-columns: 1fr 1fr; gap: calc(var(--u) * 5); }
 .cols > .col:first-child { grid-row: span 2; }
 @media (max-height: 420px) {
@@ -136,7 +139,7 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
 @media (min-aspect-ratio: 16/9) {
   .cols { grid-template-columns: 1fr 1fr 1fr; gap: calc(var(--u) * 4); }
   .cols > .col:first-child { grid-row: auto; }
-  .sheet .card { width: min(96vw, calc(var(--u) * 196)); }
+  .sheet .card { width: min(96vw - 2 * var(--sx), calc(var(--u) * 196)); }
   .swatches { grid-template-columns: repeat(5, 1fr); }
 }
 .col { display: grid; gap: calc(var(--u) * 4); align-content: start; }
@@ -157,19 +160,16 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
 .sheet .head { display: flex; align-items: center; justify-content: space-between; gap: calc(var(--u) * 4); }
 .sheet .card { padding: calc(var(--u) * 5) calc(var(--u) * 6); gap: calc(var(--u) * 3); }
 .sheet .row { padding-block: calc(var(--u) * 2); }
-/* long-press feedback and a short notice */
+/* long-press feedback */
 .pressRing { position: absolute; width: calc(var(--u) * 14); height: calc(var(--u) * 14); margin: calc(var(--u) * -7) 0 0 calc(var(--u) * -7);
   border-radius: 50%; pointer-events: none; z-index: 6; --k: 0;
   background: conic-gradient(var(--ap) calc(var(--k) * 360deg), rgba(255,255,255,.12) 0);
   -webkit-mask: radial-gradient(circle, transparent 58%, #000 60%); mask: radial-gradient(circle, transparent 58%, #000 60%); }
-.toast { position: absolute; left: 50%; bottom: calc(var(--u) * 10); transform: translateX(-50%); z-index: 7; pointer-events: none;
-  background: var(--bg); color: var(--ink); border: 1px solid var(--faint); border-radius: 999px; white-space: nowrap;
-  padding: calc(var(--u) * 2) calc(var(--u) * 5); font-weight: 600; font-size: calc(var(--u) * 3.6); box-shadow: 0 8px 30px rgba(0,0,0,.4); }
 /* trip card when you park, and the parked screensaver (drives.js) */
 .wrap, .tells { transition: opacity .5s; }
 .tripOn .odo, .tripOn .tells { opacity: .1; }
 .trip { position: absolute; inset: 0; display: grid; place-items: center; z-index: 3; }
-.trip .in { width: min(84vw, calc(var(--u) * 150)); box-sizing: border-box; padding: calc(var(--u) * 5) calc(var(--u) * 7);
+.trip .in { width: min(84vw - 2 * var(--sx), calc(var(--u) * 150)); box-sizing: border-box; padding: calc(var(--u) * 5) calc(var(--u) * 7);
   background: var(--bg); border: 1px solid var(--faint); border-radius: calc(var(--u) * 4); box-shadow: 0 20px 60px rgba(0,0,0,.5); }
 .drive .hd { display: flex; justify-content: space-between; align-items: baseline; gap: calc(var(--u) * 4);
   font-weight: 600; font-size: calc(var(--u) * 3.4); letter-spacing: .1em; color: var(--dim); text-transform: uppercase; }
@@ -293,7 +293,6 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
 </div>
 <div class="tells" id="tells"></div>
 <div class="pressRing" id="pressRing" hidden></div>
-<div class="toast" id="toast" role="status" hidden></div>
 <div class="trip" id="trip" hidden><div class="in"><div class="drive" id="tripBody"></div><div class="tap">Tap to close</div></div></div>
 <div class="saver" id="saver" hidden><div class="in" id="saverIn"><b id="saverClock"></b><div id="saverSub"></div></div></div>
 <div class="sheet" id="sheet" hidden>
@@ -393,7 +392,7 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
           </div>
           <small>Amber past this, deeper orange 10 mph (15 km/h) over that.</small>
         </div>
-        <p class="hint longhint">Long-press the dashboard while stopped to open these settings.</p>
+        <p class="hint longhint">Long-press the dashboard to open these settings.</p>
       </div>
     </div>
   </div>
@@ -407,9 +406,23 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
   var cv = $("c"), ctx = cv.getContext("2d"), W, H, P = [], idx = {};
   // the ring is soft light, so it doesn't need the screen's full pixel density
   var dpr = Math.min(1.5, window.devicePixelRatio || 1);
+  // The side safe-area inset in CSS px. If DashPilot on a notched iPhone (tall 19.5:9
+  // screen) reports none, assume the notch is there and keep 44 px clear anyway.
+  function sideInset() {
+    var probe = document.createElement("div");
+    probe.style.cssText = "position:absolute;visibility:hidden;width:var(--sx)";
+    document.body.appendChild(probe);
+    var sx = probe.getBoundingClientRect().width; probe.remove();
+    var iosApp = !window.NativeCarState && !!(window.webkit && window.webkit.messageHandlers);
+    if (!sx && iosApp && Math.max(screen.width, screen.height) / Math.min(screen.width, screen.height) > 2) {
+      sx = 44; document.documentElement.style.setProperty("--sx", "44px");
+    }
+    return sx;
+  }
   function build() {
     W = cv.width = innerWidth * dpr; H = cv.height = innerHeight * dpr;
-    var m = Math.min(H, W / 2.1) * 0.03, r = Math.min(H, W) * 0.08, x0 = m, y0 = m, x1 = W - m, y1 = H - m;
+    var sx = sideInset() * dpr;
+    var m = Math.min(H, W / 2.1) * 0.03, r = Math.min(H, W) * 0.08, x0 = m + sx, y0 = m, x1 = W - m - sx, y1 = H - m;
     P = []; idx = {};
     function line(ax, ay, bx, by) { var n = Math.ceil(Math.hypot(bx - ax, by - ay) / 6); for (var i = 0; i < n; i++) P.push([ax + (bx - ax) * i / n, ay + (by - ay) * i / n]); }
     function arc(cx, cy, a0) { for (var i = 0; i < 24; i++) { var a = a0 + i / 24 * Math.PI / 2; P.push([cx + Math.cos(a) * r, cy + Math.sin(a) * r]); } }
@@ -501,21 +514,13 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
       if (window.webkit && webkit.messageHandlers && webkit.messageHandlers[iosHandler]) webkit.messageHandlers[iosHandler].postMessage(value);
     } catch (e) {}
   }
-  // Same rules as DashPilot's own Compose editor: 550 ms press, small finger drift
-  // allowed, refuses to open above 3 (and closes itself) so it's never used while driving.
-  // The press is judged by elapsed time on every frame and on release, not by a single
+  // Same press as DashPilot's own Compose editor: 550 ms, small finger drift allowed.
+  // It opens at any speed, so a passenger can change things on the move. The press is judged by elapsed time on every frame and on release, not by a single
   // timer, so a busy 3D frame can't swallow it; touch events back up pointer events,
   // and a ring under the finger shows the press is being counted.
   var LONG_PRESS_MS = 550, MOVE_TOLERANCE = 14, DRIVING_SPEED = 3;
   var press = null;       // { x, y, t, moved }
-  function driving() { var st = Dash.state; return st.dataSourceType !== "demo" && st.egoSpeed > DRIVING_SPEED; }
-  var toastTimer = 0;
-  function toast(msg) {
-    var t = $("toast"); t.textContent = msg; t.hidden = false;
-    clearTimeout(toastTimer); toastTimer = setTimeout(function () { t.hidden = true; }, 2600);
-  }
   function openSheet() {
-    if (driving()) { toast("Settings open when you're stopped"); return; }
     $("laneSwitch").setAttribute("aria-checked", settings.laneView !== false ? "true" : "false");
     syncCarUi();
     $("sheet").hidden = false; host("setEditing", "editing", true);
@@ -607,7 +612,6 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
   $("sheetDone").addEventListener("click", closeSheet);
   $("sheet").addEventListener("click", function (e) { if (e.target === this) closeSheet(); });
   document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeSheet(); });
-  Dash.onFrame(function () { if (driving()) closeSheet(); });
   var others = { L: { a: 0 }, R: { a: 0 } };
   var C = {}, day = null, ap = 0, pw = 0, steer = 0, roll = 0, bl = { l: 0, r: 0 }, signKey = "";
   var TL = ["", "#FF3B30", "#2FCB6A", "#FFB020"];

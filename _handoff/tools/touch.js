@@ -12,12 +12,12 @@ const { chromium } = require('/opt/node-tools/node_modules/playwright');
   await p.waitForTimeout(opts.hold);
   if (!opts.noEnd) await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
   await p.waitForTimeout(opts.jank ? 1200 : 300);
-  const r = await p.evaluate(() => [!document.getElementById('sheet').hidden, document.getElementById('toast').hidden ? '' : document.getElementById('toast').textContent]);
+  const r = await p.evaluate(() => [!document.getElementById('sheet').hidden, '']);
   console.log(label.padEnd(44), 'sheet open:', r[0], r[1] ? '| notice: ' + r[1] : '');
   await ctx.close(); }
  await run('touch hold 800 ms, parked', { hold: 800 });
  await run('short tap 200 ms (should NOT open)', { hold: 200 });
  await run('hold 800 ms, phone overloaded (300 ms frames)', { hold: 800, jank: true });
  await run('hold 900 ms, touch never ends (native grab)', { hold: 900, noEnd: true });
- await run('hold 800 ms while driving 40 mph', { hold: 800, speed: 40 });
+ await run('hold 800 ms while driving 40 mph (opens)', { hold: 800, speed: 40 });
  await b.close(); })();

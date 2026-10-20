@@ -19,7 +19,7 @@ Everything is built in code with three.js, so there are no model files or textur
 
 ## Settings
 
-Long-press the dashboard while stopped to open Halo's settings. Like the Compose editor, it won't open above 3 and closes itself once you drive off. Choices are saved with the app's dash-app storage. The sheet has three tabs: **Settings** (below), **Brightness** (further down) and **Drives**, which shows the drive in progress or the last one, this week's totals, the best 0–60, and switches for the 0–60 timer, green-light nudge and screensaver.
+Long-press the dashboard to open Halo's settings, parked or on the move (handy for a passenger). Choices are saved with the app's dash-app storage. The sheet has three tabs: **Settings** (below), **Brightness** (further down) and **Drives**, which shows the drive in progress or the last one, this week's totals, the best 0–60, and switches for the 0–60 timer, green-light nudge and screensaver.
 
 - **Lane view:** turn the car-and-road view off; the speed moves to the centre and the light ahead moves under the sign.
 - **Car:** Auto, Model 3 or Model Y.
