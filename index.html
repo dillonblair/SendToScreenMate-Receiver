@@ -69,6 +69,56 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
 .viz svg { width: 100%; height: calc(var(--u) * 54); display: block; overflow: visible; }
 
 .side { display: grid; justify-items: center; gap: calc(var(--u) * 5); min-width: calc(var(--u) * 20); }
+
+/* ---- layouts (Display → Layout). An iPhone notch covers the middle half of whichever
+   side edge it's on, so A-D take the gear letters and the sign off the side edges.
+   Classic keeps them there. */
+.lay-a .side, .lay-b .side, .lay-c .side, .lay-d .side { display: contents; }
+.lay-a .gears, .lay-b .gears, .lay-c .gears, .lay-d .gears { display: flex; gap: calc(var(--u) * 2.8); justify-content: center; font-size: calc(var(--u) * 4.6); }
+.lay-a .speed, .lay-b .speed, .lay-c .speed, .lay-d .speed { grid-area: speed; justify-self: center; width: min(100%, calc(var(--u) * 92)); }
+.novis.lay-a .speed, .novis.lay-b .speed, .novis.lay-c .speed, .novis.lay-d .speed { width: calc(var(--u) * 112); }
+.lay-a .viz, .lay-b .viz, .lay-c .viz, .lay-d .viz { grid-area: viz; }
+.lay-b .gears, .lay-c .gears, .lay-d .gears { grid-area: gears; }
+.lay-b #sign, .lay-c #sign { grid-area: sign; }
+.lay-b #ap, .lay-c #ap { grid-area: ap; }
+.lay-b #light, .lay-c #light { grid-area: light; }
+/* A: a small cluster at the top centre, between the car battery and the clock */
+.lay-a .wrap { grid-template-columns: 1.35fr 1fr; grid-template-areas: "speed viz"; }
+.lay-a .gears, .lay-a #sign, .lay-a #ap, .lay-a #light { position: absolute; top: calc(var(--u) * -4); }
+.lay-a #sign { left: 50%; transform: translateX(-50%) scale(.72); transform-origin: top center; }
+.lay-a .gears { right: calc(50% + var(--u) * 10); top: calc(var(--u) * 1); }
+.lay-a #ap { left: calc(50% + var(--u) * 10); top: calc(var(--u) * 0); }
+.lay-a #ap svg { width: calc(var(--u) * 5.6); height: calc(var(--u) * 5.6); }
+.lay-a #ap b { font-size: calc(var(--u) * 5.2); }
+.lay-a #light { left: calc(50% + var(--u) * 30); top: calc(var(--u) * 1); }
+.lay-a .wrap { top: calc(var(--u) * 14); }
+/* B: sign and Autopilot right beside the speed, gears in a row under it */
+.lay-b .wrap { grid-template-columns: 1.15fr auto 1fr; grid-template-rows: auto auto auto;
+  grid-template-areas: "speed sign viz" "speed ap viz" "gears light viz"; row-gap: calc(var(--u) * 2.5); align-content: center; }
+.lay-b #sign { align-self: end; } .lay-b #ap { align-self: start; }
+.lay-b .gears { margin-top: calc(var(--u) * 1); }
+/* C: a status row under the lane view */
+.lay-c .wrap { grid-template-columns: 1.35fr repeat(3, auto); grid-template-rows: auto auto;
+  grid-template-areas: "speed viz viz viz" "speed gears sign ap"; row-gap: calc(var(--u) * 1); column-gap: calc(var(--u) * 5); align-content: center; }
+.lay-c .viz { margin-right: 0; }
+.lay-c .viz #gl, .lay-c .viz svg { height: calc(var(--u) * 50); }
+.lay-c #sign { transform: scale(.8); justify-self: center; }
+.lay-c #light { grid-area: light; display: none; }
+/* D: sign and Autopilot over the road scene, gears in a row above the speed */
+.lay-d .wrap { grid-template-columns: 1.35fr 1fr; grid-template-rows: auto auto; grid-template-areas: "gears viz" "speed viz"; row-gap: calc(var(--u) * 3); align-content: center; }
+.lay-d #sign, .lay-d #ap, .lay-d #light { grid-area: viz; z-index: 1; }
+.lay-d #sign { align-self: start; justify-self: start; transform: scale(.78); transform-origin: top left; margin-top: calc(var(--u) * 2); }
+.lay-d #ap { align-self: start; justify-self: end; margin-top: calc(var(--u) * 4); margin-right: calc(var(--u) * 2); }
+.lay-d #light { align-self: end; justify-self: end; }
+/* lane view off: the speed takes the middle, the rest gathers round it */
+.novis.lay-a .wrap { grid-template-columns: 1fr; grid-template-areas: "speed"; }
+.novis.lay-b .wrap, .novis.lay-d .wrap { grid-template-columns: 1fr auto auto 1fr; grid-template-rows: auto auto auto; }
+.novis.lay-b .wrap { grid-template-areas: ". speed sign ." ". speed ap ." ". gears light ."; }
+.novis.lay-d .wrap { grid-template-areas: ". gears . ." ". speed sign ." ". speed ap ."; }
+.novis.lay-d #sign { grid-area: sign; transform: none; align-self: end; justify-self: center; margin: 0; }
+.novis.lay-d #ap { grid-area: ap; align-self: start; justify-self: center; margin: 0; }
+.novis.lay-d #light { grid-area: auto; }
+.novis.lay-c .wrap { grid-template-columns: 1fr auto auto auto 1fr; grid-template-areas: ". speed speed speed ." ". gears sign ap ."; }
 .us { background: #fff; color: #111; border: calc(var(--u) * .7) solid #111; outline: calc(var(--u) * .5) solid #fff;
   border-radius: calc(var(--u) * 1.6); padding: calc(var(--u) * 1.6) calc(var(--u) * 2.2) calc(var(--u) * 1);
   text-align: center; font-weight: 700; line-height: 1; }
@@ -299,7 +349,7 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
   <div class="card" role="dialog" aria-modal="true" aria-label="Halo settings">
     <div class="head">
       <div class="tabs" role="tablist" id="tabs">
-        <button type="button" role="tab" data-tab="panelSet" aria-selected="true">Settings</button><button type="button" role="tab" data-tab="panelDrv" aria-selected="false">Drives</button><button type="button" role="tab" data-tab="panelBri" aria-selected="false">Brightness</button>
+        <button type="button" role="tab" data-tab="panelSet" aria-selected="true">Settings</button><button type="button" role="tab" data-tab="panelDrv" aria-selected="false">Drives</button><button type="button" role="tab" data-tab="panelBri" aria-selected="false">Display</button>
       </div>
       <button type="button" class="done" id="sheetDone">Done</button>
     </div>
@@ -347,6 +397,13 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
         </div>
       </div>
       <div class="col">
+        <div class="field">
+          <b id="layLbl">Layout</b>
+          <div class="seg" role="radiogroup" aria-labelledby="layLbl" data-key="layout" data-def="classic">
+            <button type="button" role="radio" data-v="classic">Classic</button><button type="button" role="radio" data-v="a">Top</button><button type="button" role="radio" data-v="b">Beside</button><button type="button" role="radio" data-v="c">Below</button><button type="button" role="radio" data-v="d">Over</button>
+          </div>
+          <small>Where the gears, speed-limit sign and Autopilot sit. All but Classic keep them clear of an iPhone notch.</small>
+        </div>
         <p class="hint">Halo can't change the phone's own brightness or the car's lights; DashPilot doesn't allow it. Keep the phone's auto-brightness on, and use this to take the edge off at night. Works best with the app's dark mode.</p>
       </div>
     </div>
@@ -506,6 +563,13 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
     document.body.classList.toggle("novis", !on);
   }
   applyLaneView();
+  // #lay-a ... #lay-d in the URL previews a layout without saving it
+  function applyLayout() {
+    var m = location.hash.match(/lay-(classic|[a-d])/), v = m ? m[1] : settings.layout || "classic";
+    ["a", "b", "c", "d"].forEach(function (k) { document.body.classList.toggle("lay-" + k, v === k); });
+  }
+  applyLayout();
+  window.addEventListener("hashchange", applyLayout);
   // demo page buttons switch modes through the hash
   window.addEventListener("hashchange", function () { settings.laneView = location.hash.indexOf("novis") < 0; applyLaneView(); });
   function host(androidMethod, iosHandler, value) {
@@ -573,7 +637,7 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
   sw.innerHTML = '<button type="button" role="radio" class="auto" data-v="auto" aria-label="Auto">AUTO</button>' +
     HaloCar.PAINTS.map(function (p) { return '<button type="button" role="radio" data-v="' + p.id + '" aria-label="' + p.name + '" style="background-color:' + p.hex + '"></button>'; }).join("");
   function pick(group, key, v) {
-    settings[key] = v; saveSettings(settings); syncCarUi();
+    settings[key] = v; saveSettings(settings); syncCarUi(); applyLayout();
     if (window.HaloCarChanged) window.HaloCarChanged();
   }
   [].forEach.call(document.querySelectorAll(".seg"), function (g) {
