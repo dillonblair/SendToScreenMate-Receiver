@@ -166,8 +166,8 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
   background: var(--bg); color: var(--ink); border: 1px solid var(--faint); border-radius: 999px; white-space: nowrap;
   padding: calc(var(--u) * 2) calc(var(--u) * 5); font-weight: 600; font-size: calc(var(--u) * 3.6); box-shadow: 0 8px 30px rgba(0,0,0,.4); }
 /* trip card when you park, and the parked screensaver (drives.js) */
-.wrap, .odo, .tells { transition: opacity .5s; }
-.tripOn .wrap, .tripOn .odo, .tripOn .tells { opacity: .1; }
+.wrap, .tells { transition: opacity .5s; }
+.tripOn .odo, .tripOn .tells { opacity: .1; }
 .trip { position: absolute; inset: 0; display: grid; place-items: center; z-index: 3; }
 .trip .in { width: min(84vw, calc(var(--u) * 150)); box-sizing: border-box; padding: calc(var(--u) * 5) calc(var(--u) * 7);
   background: var(--bg); border: 1px solid var(--faint); border-radius: calc(var(--u) * 4); box-shadow: 0 20px 60px rgba(0,0,0,.5); }
@@ -203,6 +203,12 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
 .drvcols .drive .st b { font-size: calc(var(--u) * 7.4); }
 .drvcols .col .row:first-child { border-top: 0; padding-top: 0; }
 .drvcols .col .row + .row { border-top: 0; }
+/* brightness: Halo dims its own light. Black stays black, so this is real light saved
+   on an OLED screen. Hazard text (.tells) stays at full strength. */
+.top, .odo, .trip .in, .saver .in { opacity: var(--bk, 1); transition: opacity 1s; }
+.wrap { opacity: var(--bk, 1); }
+.tripOn .wrap { opacity: calc(var(--bk, 1) * .1); }
+#briNow { color: var(--ink); }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
 </head>
@@ -294,7 +300,7 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
   <div class="card" role="dialog" aria-modal="true" aria-label="Halo settings">
     <div class="head">
       <div class="tabs" role="tablist" id="tabs">
-        <button type="button" role="tab" data-tab="panelSet" aria-selected="true">Settings</button><button type="button" role="tab" data-tab="panelDrv" aria-selected="false">Drives</button>
+        <button type="button" role="tab" data-tab="panelSet" aria-selected="true">Settings</button><button type="button" role="tab" data-tab="panelDrv" aria-selected="false">Drives</button><button type="button" role="tab" data-tab="panelBri" aria-selected="false">Brightness</button>
       </div>
       <button type="button" class="done" id="sheetDone">Done</button>
     </div>
@@ -313,6 +319,36 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
           <div><b id="saverLbl">Parked screensaver</b><small>Clock and battery after a minute in Park. Drifts slightly to protect the screen.</small></div>
           <button type="button" class="switch" data-opt="saver" data-def="true" role="switch" aria-labelledby="saverLbl"></button>
         </div>
+      </div>
+    </div>
+    <div class="cols" id="panelBri" role="tabpanel" hidden>
+      <div class="col">
+        <div class="field">
+          <b id="briLbl">Brightness</b>
+          <div class="seg" role="radiogroup" aria-labelledby="briLbl" data-key="bright" data-def="auto">
+            <button type="button" role="radio" data-v="auto">Auto</button><button type="button" role="radio" data-v="100">100%</button><button type="button" role="radio" data-v="80">80%</button><button type="button" role="radio" data-v="60">60%</button><button type="button" role="radio" data-v="40">40%</button>
+          </div>
+          <small>Dims the ring's glow and Halo's text. Red hazards, turn signals and the speed warning on the ring stay at full strength.</small>
+        </div>
+        <p class="hint">Now: <span id="briNow">100%</span></p>
+      </div>
+      <div class="col">
+        <div class="field">
+          <b id="nightLbl">Auto: at night</b>
+          <div class="seg" role="radiogroup" aria-labelledby="nightLbl" data-key="nightLevel" data-def="60" id="nightSeg">
+            <button type="button" role="radio" data-v="80">80%</button><button type="button" role="radio" data-v="60">60%</button><button type="button" role="radio" data-v="40">40%</button><button type="button" role="radio" data-v="25">25%</button>
+          </div>
+        </div>
+        <div class="field">
+          <b id="nightByLbl">Auto: night is</b>
+          <div class="seg" role="radiogroup" aria-labelledby="nightByLbl" data-key="nightBy" data-def="sun" id="nightBySeg">
+            <button type="button" role="radio" data-v="sun">After sunset</button><button type="button" role="radio" data-v="dark">Dark mode on</button>
+          </div>
+          <small id="sunNote"></small>
+        </div>
+      </div>
+      <div class="col">
+        <p class="hint">Halo can't change the phone's own brightness or the car's lights; DashPilot doesn't allow it. Keep the phone's auto-brightness on, and use this to take the edge off at night. Works best with the app's dark mode.</p>
       </div>
     </div>
     <div class="cols" id="panelSet" role="tabpanel">
@@ -544,6 +580,9 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
     var offs = Dash.state.isImperial === false ? WARN_KMH : WARN_MPH;
     [].forEach.call($("overSeg").children, function (b, i) { b.textContent = "+" + offs[i]; });
     $("overSeg").setAttribute("aria-disabled", settings.warn === "off" ? "true" : "false");
+    var fixed = (settings.bright || "auto") !== "auto";
+    $("nightSeg").setAttribute("aria-disabled", fixed ? "true" : "false");
+    $("nightBySeg").setAttribute("aria-disabled", fixed ? "true" : "false");
     var cur = settings.paint || "auto";
     [].forEach.call(sw.children, function (b) { b.setAttribute("aria-checked", b.dataset.v === cur ? "true" : "false"); });
     var r = HaloCar.resolve(settings, Dash.state), d = r.detected;
@@ -593,16 +632,53 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
     if (drainT && now - drainT > DRAIN_S) drainT = 0;
     if (nudgeT && now - nudgeT > NUDGE_S) nudgeT = 0;
     var saving = !!(window.HaloDrives && HaloDrives.saver);
+    updateBrightness(s, now);
 
     updateWarn(s);
     // ---- halo (redrawn only while something on it moves or changes)
     var ringKey = [s.adasOn, s.leftBlinker, s.rightBlinker, s.leftBlindSpot, s.rightBlindSpot, s.trafficLightColor,
-      Math.round(s.stopLineDist), warnStage, settings.warn, Math.round(warnBy), day, W, H, saving].join();
+      Math.round(s.stopLineDist), warnStage, settings.warn, Math.round(warnBy), day, W, H, saving, briLevel].join();
     var ringMoving = (ap > 0.005 && ap < 0.995) || bl.l || bl.r ||
       s.leftBlindSpot === 2 || s.rightBlindSpot === 2 || drainT || nudgeT || (saving && !reduceMotion);
     if (ringMoving || ringKey !== lastRing) { lastRing = ringKey; drawRing(); }
   });
   var lastRing = "";
+  // ---- brightness. No light sensor reaches web dashboards, so Auto goes by an estimated
+  // sunset and sunrise (or the app's dark-mode switch, if the driver prefers).
+  var ringDim = 1, briLevel = 100, briT = -1, sun = null;
+  var TZ = ""; try { TZ = Intl.DateTimeFormat().resolvedOptions().timeZone || ""; } catch (e) {}
+  var SOUTH = /^(Australia|Antarctica)\/|^Pacific\/(Auckland|Chatham)|^America\/(Santiago|Argentina|Sao_Paulo|Montevideo|Asuncion)|^Africa\/(Johannesburg|Maputo|Harare|Windhoek)/.test(TZ);
+  // Sunrise and sunset in local hours, without the phone's location: latitude 40 (N or S
+  // from the time zone) and solar noon at about 12:15 standard time. Within an hour or so.
+  function sunTimes(ms) {
+    var d = new Date(ms), y = d.getFullYear(), doy = (d - new Date(y, 0, 1)) / 864e5, rad = Math.PI / 180;
+    var lat = (SOUTH ? -40 : 40) * rad, decl = -23.44 * rad * Math.cos(2 * Math.PI * (doy + 10) / 365);
+    var cosH = (Math.sin(-0.833 * rad) - Math.sin(lat) * Math.sin(decl)) / (Math.cos(lat) * Math.cos(decl));
+    var half = Math.acos(Math.max(-1, Math.min(1, cosH))) * 12 / Math.PI;
+    var dst = d.getTimezoneOffset() < Math.max(new Date(y, 0, 1).getTimezoneOffset(), new Date(y, 6, 1).getTimezoneOffset()) ? 1 : 0;
+    var noon = 12.25 + dst;
+    return [noon - half, noon + half];
+  }
+  function hm(h, imp) { return Dash.clock({ currentTime: new Date(2000, 0, 1, Math.floor(h), Math.round(h % 1 * 60)).getTime(), isImperial: imp }) + (imp ? (h < 12 ? " am" : " pm") : ""); }
+  function updateBrightness(s, now) {
+    if (now - briT < 1 && briT >= 0) return; briT = now;
+    var mode = settings.bright || "auto", night = +(settings.nightLevel || 60), lvl;
+    if (mode !== "auto") lvl = +mode;
+    else if (settings.nightBy === "dark") lvl = s.darkMode ? night : 100;
+    else {
+      var ms = s.currentTime || Date.now(), d = new Date(ms), h = d.getHours() + d.getMinutes() / 60;
+      sun = sunTimes(ms);
+      // fade over half an hour after sunset and before sunrise
+      var k = h >= 12 ? Math.min(1, Math.max(0, (h - sun[1]) / 0.5)) : Math.min(1, Math.max(0, (sun[0] - h) / 0.5));
+      lvl = Math.round(100 - (100 - night) * k);
+    }
+    if (lvl !== briLevel) { briLevel = lvl; ringDim = lvl / 100; document.documentElement.style.setProperty("--bk", ringDim); }
+    if (!$("sheet").hidden && !$("panelBri").hidden) {
+      $("briNow").textContent = lvl + "%" + (mode === "auto" ? (lvl < 100 ? " (night)" : " (day)") : "");
+      var st = sun || sunTimes(s.currentTime || Date.now());
+      $("sunNote").textContent = "Estimated for your time zone, not your exact location: sunset about " + hm(st[1], s.isImperial) + ", sunrise about " + hm(st[0], s.isImperial) + ".";
+    }
+  }
   var apWas = false, drainT = 0, DRAIN_S = 0.9, redStop = false, greenAt = 0, nudgeT = 0, NUDGE_S = 1.6;
   function ease(x) { x = Math.max(0, Math.min(1, x)); return x * x * (3 - 2 * x); }
   // ---- speed warning: amber past the chosen offset, deeper orange 10 mph / 15 km/h further.
@@ -617,22 +693,22 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
   function drawRing() {
     var s = Dash.state, hq = s.renderQuality !== 1, u = Math.min(H, W / 2.1) / dpr / 100, N = idx.N, RM = idx.RM, BC = idx.BC, LM = idx.LM, now = performance.now() / 1000;
     ctx.clearRect(0, 0, W, H);
-    seg(0, N, C["--band"], u * 1);
+    ctx.globalAlpha = ringDim; seg(0, N, C["--band"], u * 1); ctx.globalAlpha = 1;
     // parked screensaver: the ring breathes slowly and nothing else is drawn
     if (window.HaloDrives && HaloDrives.saver) {
-      glow(0, N, day ? "#8A8F98" : "#9AA3B0", u * 0.8, reduceMotion ? 0.35 : 0.22 + 0.2 * Math.sin(now * Math.PI / 3), hq);
+      glow(0, N, day ? "#8A8F98" : "#9AA3B0", u * 0.8, ringDim * (reduceMotion ? 0.35 : 0.22 + 0.2 * Math.sin(now * Math.PI / 3)), hq);
       return;
     }
     if (drainT) {
       // the ring empties toward the bottom: the top goes first, then down both sides
       var dk = (now - drainT) / DRAIN_S, half = N / 2 * (1 - ease(dk));
       if (half > 1) {
-        glow(BC - half, BC + half, C["--ap"], u * 1, 1 - 0.4 * dk, hq);
+        glow(BC - half, BC + half, C["--ap"], u * 1, ringDim * (1 - 0.4 * dk), hq);
         if (hq) { flare(BC - half, C["--ap"], u * 4); flare(BC + half, C["--ap"], u * 4); }
       }
     }
     if (ap > 0.01) {
-      glow(0, N, C["--ap"], u * 0.9, 0.9 * ap, hq);
+      glow(0, N, C["--ap"], u * 0.9, 0.9 * ap * ringDim, hq);
     }
     // speed warning on the top edge; held back while a blinker sweeps so the ambers never mix
     if ((settings.warn || "ring") === "ring" && warnStage && !s.trafficLightColor && !s.leftBlinker && !s.rightBlinker) {

@@ -46,6 +46,7 @@ Size: about 0.81 MB without `preview.jpg`. The limit is 5 MB. It makes no networ
 - **Edges:** car battery (top left), phone battery + clock (top right), odometer (bottom left), seatbelt/door warnings (bottom centre). Each follows the app's Show car battery / Show phone battery / Show odometer settings (default on).
 - **Settings (long-press ~0.55 s while stopped):** Lane view on/off · Car (Auto / Model 3 / Model Y) · Version (Auto / Original / Refresh) · Paint (Auto + 12 Tesla paints) · Speed warning (Off / Speed / Both) · Warn above limit by +0/+3/+5/+10 mph (+0/+5/+10/+15 km/h). Saved via `NativeCarState.setAppData` / `webkit.messageHandlers.appData`, with localStorage as the fallback when loaded by URL.
 - **Drives (`drives.js`):** trip card on Park, this week's totals, optional 0–60 timer, parked screensaver after 60 s. The Drives tab in settings shows the drive in progress (so it has something to show in DashPilot's Demo, which never parks) or the last drive, plus switches.
+- **Brightness tab (index.html, `updateBrightness`):** Auto (night level 80/60/40/25%, night = estimated sunset→sunrise from date + time zone at latitude ±40, or app dark mode) or fixed 100–40%. Sets `--bk` (opacity on text) and `ringDim` (band, Autopilot, drain, screensaver ring). Hazards, turn sweep, speed warning and `.tells` stay full. Dash apps can't set phone brightness or car lights (CarStateBridge.kt / WebDashView.swift only expose getters + appData + editing).
 - **Ring cues (index.html):** Autopilot-off drain (assist drops out above 3 mph) and the green-light nudge (stopped on red → green, still stopped 2 s later).
 - **Long-press:** judged per frame and on release (not one timer), backed by touch events, survives a native gesture cancelling the pointer. A blue ring fills under the finger. Above 3 mph (non-demo) it shows "Settings open when you're stopped" instead.
 
@@ -70,6 +71,7 @@ Node + Playwright scripts. They use `/opt/node-tools/node_modules/playwright` an
 - `bridge.js`: fake iOS + Android bridges; demo stays off in the app; settings open.
 - `touch.js`: real touch events: hold, short tap, overloaded page, cancelled touch, driving notice.
 - `lp.js`, `warn.js`, `net.js`: long-press + lane-view persistence, speed-warning thresholds, no network requests.
+- `brightness.js`: `--bk` and ring brightness for fixed / Auto-by-sun / Auto-by-dark-mode, hazards stay full, tab screenshots. Usage: `node brightness.js /abs/index.html outdir`.
 - `drivetest.js`: launch timer, AP-off drain, green-light nudge, trip card, appData save, Drives tab, screensaver + wake (~90 s).
 - `shot.js`: demo-time screenshots (set `HASH=#day` etc).
 

@@ -7,7 +7,7 @@ const { chromium } = require('/opt/node-tools/node_modules/playwright');
   const b = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
   const ctx = await b.newContext({ viewport: { width: 1140, height: 540 }, hasTouch: true, deviceScaleFactor: 1 });
   const p = await ctx.newPage(); p.on('pageerror', e => console.log('ERR', e.message));
-  await p.addInitScript(`window.__saved = []; window.__DASHPILOT_APP_DATA__ = '{"launch":true}';
+  await p.addInitScript(`window.__saved = []; window.__DASHPILOT_APP_DATA__ = '{"launch":true,"bright":"100"}';
     window.webkit = { messageHandlers: { editing: { postMessage(){} }, appData: { postMessage(v){ __saved.push(v); } } } };`);
   await p.goto('file://' + file); await p.waitForTimeout(800);
   await p.evaluate(() => {

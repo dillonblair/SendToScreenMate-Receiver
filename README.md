@@ -19,7 +19,7 @@ Everything is built in code with three.js, so there are no model files or textur
 
 ## Settings
 
-Long-press the dashboard while stopped to open Halo's settings. Like the Compose editor, it won't open above 3 and closes itself once you drive off. Choices are saved with the app's dash-app storage. The sheet has two tabs: **Settings** (below) and **Drives**, which shows the drive in progress or the last one, this week's totals, the best 0–60, and switches for the 0–60 timer, green-light nudge and screensaver.
+Long-press the dashboard while stopped to open Halo's settings. Like the Compose editor, it won't open above 3 and closes itself once you drive off. Choices are saved with the app's dash-app storage. The sheet has three tabs: **Settings** (below), **Brightness** (further down) and **Drives**, which shows the drive in progress or the last one, this week's totals, the best 0–60, and switches for the 0–60 timer, green-light nudge and screensaver.
 
 - **Lane view:** turn the car-and-road view off; the speed moves to the centre and the light ahead moves under the sign.
 - **Car:** Auto, Model 3 or Model Y.
@@ -27,6 +27,12 @@ Long-press the dashboard while stopped to open Halo's settings. Like the Compose
 - **Paint:** Auto or one of twelve Tesla paints.
 - **Speed warning:** Off, Speed (the number changes colour) or Both (the top of the ring lights too).
 - **Warn above the limit by:** +0, +3, +5 or +10 mph (+0, +5, +10 or +15 km/h). Past that the speed turns amber, and 10 mph / 15 km/h further it turns a deeper orange. A one-unit margin stops it flickering at the threshold. Red is never used for speed, because on Halo red means a car in your blind spot or a red light.
+
+**Brightness tab.** Dash apps can't change the phone's brightness or the car's lights, and no light sensor reaches them, so Halo dims its own light instead: the ring's glow and its text. Black stays black, so on an OLED phone this is real light saved. Red hazards, turn signals and the ring's speed warning stay at full strength.
+
+- **Brightness:** Auto, or a fixed 100 / 80 / 60 / 40%.
+- **Auto: at night:** 80, 60, 40 or 25%.
+- **Auto: night is:** after sunset (estimated from the date and time zone, since dash apps don't get the phone's location; the tab shows the estimated times) or whenever the app's dark mode is on. It fades over half an hour around sunset and sunrise.
 
 **Auto:** DashPilot doesn't send the VIN or paint to dash apps today, so Auto means Model 3, Original, Pearl White. Halo already reads `vin` and `exteriorColor` if a future version sends them: the VIN gives the model (4th character) and model year (10th), and the legacy `GTW_exteriorColor` code gives the paint. Your own choice always overrides.
 

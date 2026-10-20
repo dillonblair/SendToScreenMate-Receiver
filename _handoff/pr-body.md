@@ -27,7 +27,7 @@ The cluster a Model 3 / Model Y never had, for the legacy cars (2019–2024) and
 - **Autopilot-off cue:** the blue ring drains away when assist drops out while moving
 - **parked screensaver:** clock, date and battery after a minute in Park, drifting to protect the screen
 
-**Settings:** long-press while stopped. Lane view, car, version, paint, speed warning and its offset; a Drives tab with the drive in progress or the last one, the week, and switches for the new extras. Saved with `setAppData` / `appData`. It won't open above 3 and closes when you drive off.
+**Settings:** long-press while stopped. Lane view, car, version, paint, speed warning and its offset; a Brightness tab (Auto by estimated sunset or dark mode, or fixed; Halo dims its own glow and text, hazards stay full); a Drives tab with the drive in progress or the last one, the week, and switches for the new extras. Saved with `setAppData` / `appData`. It won't open above 3 and closes when you drive off.
 
 **Legacy vs Juniper:** Halo handles the Juniper's missing `DAS_road` data, and hides the legacy set speed if it just mirrors the current speed (see the TODO in `bridge/car/cars/tesla.h`).
 
