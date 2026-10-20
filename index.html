@@ -73,7 +73,11 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
 /* ---- layouts (Display → Layout). An iPhone notch covers the middle half of whichever
    side edge it's on, so A-D take the gear letters and the sign off the side edges.
    Classic keeps them there. */
+/* nothing sits in the middle of the side edges any more, so no notch margin is needed */
+body.lay-a, body.lay-b, body.lay-c, body.lay-d { --sx: 0px; }
 .lay-a .side, .lay-b .side, .lay-c .side, .lay-d .side { display: contents; }
+/* a little room in the middle band only, so the turn arrows and set speed clear a notch */
+.lay-a .wrap, .lay-b .wrap, .lay-c .wrap, .lay-d .wrap { padding-inline: calc(var(--u) * 5); }
 .lay-a .gears, .lay-b .gears, .lay-c .gears, .lay-d .gears { display: flex; gap: calc(var(--u) * 2.8); justify-content: center; font-size: calc(var(--u) * 4.6); }
 .lay-a .speed, .lay-b .speed, .lay-c .speed, .lay-d .speed { grid-area: speed; justify-self: center; width: min(100%, calc(var(--u) * 92)); }
 .novis.lay-a .speed, .novis.lay-b .speed, .novis.lay-c .speed, .novis.lay-d .speed { width: calc(var(--u) * 112); }
@@ -108,7 +112,7 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
 .lay-d .wrap { grid-template-columns: 1.35fr 1fr; grid-template-rows: auto auto; grid-template-areas: "gears viz" "speed viz"; row-gap: calc(var(--u) * 3); align-content: center; }
 .lay-d #sign, .lay-d #ap, .lay-d #light { grid-area: viz; z-index: 1; }
 .lay-d #sign { align-self: start; justify-self: start; transform: scale(.78); transform-origin: top left; margin-top: calc(var(--u) * 2); }
-.lay-d #ap { align-self: start; justify-self: end; margin-top: calc(var(--u) * 4); margin-right: calc(var(--u) * 2); }
+.lay-d #ap { align-self: start; justify-self: end; margin-top: calc(var(--u) * 4); margin-right: calc(var(--u) * 6); }
 .lay-d #light { align-self: end; justify-self: end; }
 /* lane view off: the speed takes the middle, the rest gathers round it */
 .novis.lay-a .wrap { grid-template-columns: 1fr; grid-template-areas: "speed"; }
@@ -470,6 +474,7 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
     probe.style.cssText = "position:absolute;visibility:hidden;width:var(--sx)";
     document.body.appendChild(probe);
     var sx = probe.getBoundingClientRect().width; probe.remove();
+    if (/\blay-[a-d]\b/.test(document.body.className)) return 0;     // these layouts need no notch margin
     var iosApp = !window.NativeCarState && !!(window.webkit && window.webkit.messageHandlers);
     if (!sx && iosApp && Math.max(screen.width, screen.height) / Math.min(screen.width, screen.height) > 2) {
       sx = 44; document.documentElement.style.setProperty("--sx", "44px");
@@ -567,6 +572,7 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
   function applyLayout() {
     var m = location.hash.match(/lay-(classic|[a-d])/), v = m ? m[1] : settings.layout || "classic";
     ["a", "b", "c", "d"].forEach(function (k) { document.body.classList.toggle("lay-" + k, v === k); });
+    build(); lastRing = "";      // the ring's notch margin depends on the layout
   }
   applyLayout();
   window.addEventListener("hashchange", applyLayout);
