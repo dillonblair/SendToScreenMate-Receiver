@@ -352,7 +352,10 @@ body.lay-a, body.lay-b, body.lay-c, body.lay-d { --sx: 0px; }
 .hudOn .wrap, .hudOn #c, .hudOn .top, .hudOn .odo, .hudOn .nkw { display: none; }
 .hud { position: fixed; inset: 0; z-index: 7; background: #000; color: #F2FFF9; overflow: hidden; }
 .hud .hin { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: 2vmin; }
-.hud.mirror .hin { transform: scaleY(-1); }
+/* Flip: upside down, for a phone lying flat with its top edge toward the glass.
+   Mirror: left-right, for its bottom edge toward the glass (and how a wall mirror reads it). */
+.hud.flip .hin { transform: scaleY(-1); }
+.hud.mirror .hin { transform: scaleX(-1); }
 .hrow { display: flex; align-items: center; gap: 5vmin; }
 .hrow svg { width: 16vmin; height: 16vmin; fill: #39FF8E; opacity: .06; }
 .hrow svg.on { opacity: 1; }
@@ -469,8 +472,8 @@ body.lay-a, body.lay-b, body.lay-c, body.lay-d { --sx: 0px; }
       <svg id="hTurnR" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4l8 8-8 8v-5H2V9h12z"/></svg>
     </div>
     <div class="hsub"><span id="hlim"></span><span class="set" id="hset"></span><span id="hlight"></span></div>
+    <i class="hbs l" id="hbsL"></i><i class="hbs r" id="hbsR"></i>
   </div>
-  <i class="hbs l" id="hbsL"></i><i class="hbs r" id="hbsR"></i>
   <div class="hexit" id="hexit">Double-tap to leave HUD</div>
 </div>
 <div class="pressRing" id="pressRing" hidden></div>
@@ -514,9 +517,9 @@ body.lay-a, body.lay-b, body.lay-c, body.lay-d { --sx: 0px; }
         <div class="field">
           <b id="hudLbl">HUD image</b>
           <div class="seg" role="radiogroup" aria-labelledby="hudLbl" data-key="hudFlip" data-def="flip">
-            <button type="button" role="radio" data-v="flip">Flipped</button><button type="button" role="radio" data-v="normal">Normal</button>
+            <button type="button" role="radio" data-v="flip" aria-label="Flip top to bottom">Flip ↕</button><button type="button" role="radio" data-v="mirror" aria-label="Mirror left to right">Mirror ↔</button><button type="button" role="radio" data-v="normal">Off</button>
           </div>
-          <small>Flipped reads right in the windshield: phone flat, top edge toward the glass.</small>
+          <small>Phone flat: Flip if its top faces the glass, Mirror if the bottom does.</small>
         </div>
       </div>
       <div class="col">
@@ -817,10 +820,14 @@ body.lay-a, body.lay-b, body.lay-c, body.lay-d { --sx: 0px; }
   // ---- HUD mode: the HUD button turns the whole screen into a windshield HUD, a double
   // tap turns it back. Remembered, so a reload mid-drive stays in HUD.
   var hudTap = 0, hudHintT = 0;
+  function hudImage() {
+    var f = settings.hudFlip || "flip";
+    $("hud").classList.toggle("flip", f === "flip"); $("hud").classList.toggle("mirror", f === "mirror");
+  }
   function setHud(on) {
     settings.hud = on; saveSettings(settings);
     $("hud").hidden = !on; document.body.classList.toggle("hudOn", on);
-    $("hud").classList.toggle("mirror", settings.hudFlip !== "normal");
+    hudImage();
     if (on) { $("hexit").style.opacity = 1; clearTimeout(hudHintT); hudHintT = setTimeout(function () { $("hexit").style.opacity = 0; }, 4000); }
     lastRing = "";
   }
@@ -852,7 +859,7 @@ body.lay-a, body.lay-b, body.lay-c, body.lay-d { --sx: 0px; }
   function pick(group, key, v) {
     if (key === "theme") themePreview = false;      // the driver's choice beats a #neon preview
     settings[key] = v; saveSettings(settings); applyTheme(); syncCarUi();
-    $("hud").classList.toggle("mirror", settings.hudFlip !== "normal");
+    hudImage();
     if (window.HaloCarChanged) window.HaloCarChanged();
   }
   [].forEach.call(document.querySelectorAll(".seg"), function (g) {
