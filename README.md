@@ -23,7 +23,7 @@ Long-press the dashboard to open Halo's settings, parked or on the move (handy f
 
 - **HUD (iPhone Duo, unfolded; the HUD button, bottom right):** turns the screen into a windshield head-up display: pure black, a big speed, turn arrows, blind-spot bars, the limit, set speed and the light ahead. Lay the phone flat under the windshield. Display → HUD image: Flip (phone flat, top edge toward the glass), Mirror (bottom edge toward the glass, and how a wall mirror reads it) or Off. Double-tap to go back.
 - **Theme (Display tab):** Halo, or Neon: speed and power on two glowing magenta arc gauges with your car between them, over soft out-of-focus city lights. Every ring signal moves onto the arcs: Autopilot turns their outline cyan, turn signals sweep along them, a blind spot lights the middle of that side, and a red light or the speed warning lights their tops. Neon is always dark and has its own layout.
-- **Lane view:** turn the car-and-road view off; the speed moves to the centre and the light ahead moves under the sign.
+- **Lane view:** Auto (the default) shows the car-and-road view only while Autopilot or FSD is on (on the Juniper, cruise too) and hides it a few seconds after assist ends. Always keeps it on; Off hides it completely. While it's hidden, the speed moves to the centre and the light ahead moves under the sign.
 - **Car:** Auto, Model 3 or Model Y.
 - **Version:** Auto, Original, or Refresh (2024+ Model 3 Highland, 2025+ Model Y Juniper).
 - **Paint:** Auto or one of twelve Tesla paints.

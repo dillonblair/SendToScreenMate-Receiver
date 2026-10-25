@@ -563,22 +563,18 @@ body.lay-a, body.lay-b, body.lay-c, body.lay-d { --sx: 0px; }
     </div>
     <div class="cols" id="panelSet" role="tabpanel">
       <div class="col">
-        <div class="row">
-          <div><b id="laneLbl">Lane view</b><small>Off moves the speed to the centre.</small></div>
-          <button type="button" class="switch" id="laneSwitch" role="switch" aria-checked="true" aria-labelledby="laneLbl"></button>
+        <div class="field">
+          <b id="laneLbl">Lane view</b>
+          <div class="seg" role="radiogroup" aria-labelledby="laneLbl" data-key="laneMode" data-def="auto" id="laneSeg">
+            <button type="button" role="radio" data-v="auto">Auto</button><button type="button" role="radio" data-v="on">Always</button><button type="button" role="radio" data-v="off">Off</button>
+          </div>
+          <small>Auto: only while Autopilot or FSD is on.</small>
         </div>
         <div class="field">
           <b id="carLbl">Car</b>
           <div class="seg" role="radiogroup" aria-labelledby="carLbl" data-key="car">
             <button type="button" role="radio" data-v="auto">Auto</button><button type="button" role="radio" data-v="3">Model 3</button><button type="button" role="radio" data-v="Y">Model Y</button>
           </div>
-        </div>
-        <div class="field">
-          <b id="genLbl">Version</b>
-          <div class="seg" role="radiogroup" aria-labelledby="genLbl" data-key="gen">
-            <button type="button" role="radio" data-v="auto">Auto</button><button type="button" role="radio" data-v="legacy">Original</button><button type="button" role="radio" data-v="refresh">Refresh</button>
-          </div>
-          <small>Refresh: Model 3 2024+, Model Y 2025+.</small>
         </div>
       </div>
       <div class="col">
@@ -587,7 +583,14 @@ body.lay-a, body.lay-b, body.lay-c, body.lay-d { --sx: 0px; }
           <div class="swatches" role="radiogroup" aria-labelledby="paintLbl" id="swatches"></div>
           <small id="paintName"></small>
         </div>
-        <p class="hint" id="detectNote"></p>
+        <div class="field">
+          <b id="genLbl">Version</b>
+          <div class="seg" role="radiogroup" aria-labelledby="genLbl" data-key="gen">
+            <button type="button" role="radio" data-v="auto">Auto</button><button type="button" role="radio" data-v="legacy">Original</button><button type="button" role="radio" data-v="refresh">Refresh</button>
+          </div>
+          <small>Refresh: Model 3 2024+, Model Y 2025+.</small>
+        </div>
+        <p class="hint longhint" id="detectNote"></p>
       </div>
       <div class="col">
         <div class="row">
@@ -762,12 +765,26 @@ body.lay-a, body.lay-b, body.lay-c, body.lay-d { --sx: 0px; }
   function duoChanged() { var was = duo; applyDuo(); if (duo && !was && settings.hud) setHud(true); }
   window.addEventListener("resize", duoChanged); window.addEventListener("hashchange", duoChanged);
   window.HaloSave = function () { saveSettings(settings); };
-  if (location.hash.indexOf("novis") >= 0) settings.laneView = false;
+  // ---- lane view: Auto (the default) shows it while assist is on and hides it a few
+  // seconds after assist ends; Always; or Off. The old on/off switch maps onto these.
+  // #novis in the URL previews Off without saving it.
+  var laneOn = null, autoLane = false, assistOffAt = 0, LANE_HOLD_S = 4;
+  function laneMode() {
+    if (location.hash.indexOf("novis") >= 0) return "off";
+    if (settings.laneMode) return settings.laneMode;
+    return settings.laneView === false ? "off" : settings.laneView === true ? "on" : "auto";
+  }
   function applyLaneView() {
-    var on = settings.laneView !== false;
-    document.body.classList.toggle("novis", !on);
+    var m = laneMode(), on = m === "on" || (m === "auto" && autoLane);
+    if (on === laneOn) return;
+    laneOn = on; document.body.classList.toggle("novis", !on);
   }
   applyLaneView();
+  Dash.onFrame(function (s, dt, now) {
+    if (s.adasOn) { autoLane = true; assistOffAt = 0; }
+    else if (autoLane) { if (!assistOffAt) assistOffAt = now; else if (now - assistOffAt > LANE_HOLD_S) autoLane = false; }
+    applyLaneView();
+  });
   // #lay-a ... #lay-d in the URL previews a layout without saving it
   function applyLayout() {
     var m = location.hash.match(/lay-(classic|[a-d])/), v = m ? m[1] : settings.layout || "classic";
@@ -787,7 +804,7 @@ body.lay-a, body.lay-b, body.lay-c, body.lay-d { --sx: 0px; }
   }
   window.addEventListener("hashchange", function () { themePreview = location.hash.indexOf("neon") >= 0; applyTheme(); });
   // demo page buttons switch modes through the hash
-  window.addEventListener("hashchange", function () { settings.laneView = location.hash.indexOf("novis") < 0; applyLaneView(); });
+  window.addEventListener("hashchange", applyLaneView);
   function host(androidMethod, iosHandler, value) {
     try {
       if (window.NativeCarState && NativeCarState[androidMethod]) { NativeCarState[androidMethod](value); return; }
@@ -801,7 +818,6 @@ body.lay-a, body.lay-b, body.lay-c, body.lay-d { --sx: 0px; }
   var LONG_PRESS_MS = 550, MOVE_TOLERANCE = 14, DRIVING_SPEED = 3;
   var press = null;       // { x, y, t, moved }
   function openSheet() {
-    $("laneSwitch").setAttribute("aria-checked", settings.laneView !== false ? "true" : "false");
     $("lightSwitch").setAttribute("aria-checked", settings.stopLine !== false ? "true" : "false");
     syncCarUi();
     $("sheet").hidden = false; host("setEditing", "editing", true);
@@ -873,11 +889,6 @@ body.lay-a, body.lay-b, body.lay-c, body.lay-d { --sx: 0px; }
     this.setAttribute("aria-checked", settings.stopLine ? "true" : "false");
     saveSettings(settings);
   });
-  $("laneSwitch").addEventListener("click", function () {
-    settings.laneView = settings.laneView === false;
-    this.setAttribute("aria-checked", settings.laneView ? "true" : "false");
-    applyLaneView(); saveSettings(settings);
-  });
   // ---- car: model, version and paint (Auto uses what the car reports, if anything)
   window.HaloSettings = settings;
   var sw = $("swatches");
@@ -885,7 +896,8 @@ body.lay-a, body.lay-b, body.lay-c, body.lay-d { --sx: 0px; }
     HaloCar.PAINTS.map(function (p) { return '<button type="button" role="radio" data-v="' + p.id + '" aria-label="' + p.name + '" style="background-color:' + p.hex + '"></button>'; }).join("");
   function pick(group, key, v) {
     if (key === "theme") themePreview = false;      // the driver's choice beats a #neon preview
-    settings[key] = v; saveSettings(settings); applyTheme(); syncCarUi();
+    if (key === "laneMode") delete settings.laneView;
+    settings[key] = v; saveSettings(settings); applyTheme(); applyLaneView(); syncCarUi();
     hudImage();
     if (window.HaloCarChanged) window.HaloCarChanged();
   }
@@ -895,7 +907,8 @@ body.lay-a, body.lay-b, body.lay-c, body.lay-d { --sx: 0px; }
   sw.addEventListener("click", function (e) { var b = e.target.closest("button"); if (b) pick(sw, "paint", b.dataset.v); });
   function syncCarUi() {
     [].forEach.call(document.querySelectorAll(".seg"), function (g) {
-      var cur = g.dataset.key === "theme" ? (neon ? "neon" : "halo") : settings[g.dataset.key] || g.dataset.def || "auto";
+      var cur = g.dataset.key === "theme" ? (neon ? "neon" : "halo") : g.dataset.key === "laneMode" ? laneMode()
+        : settings[g.dataset.key] || g.dataset.def || "auto";
       [].forEach.call(g.children, function (b) { b.setAttribute("aria-checked", b.dataset.v === cur ? "true" : "false"); });
     });
     var offs = Dash.state.isImperial === false ? WARN_KMH : WARN_MPH;
@@ -913,7 +926,7 @@ body.lay-a, body.lay-b, body.lay-c, body.lay-d { --sx: 0px; }
     $("paintName").textContent = HaloCar.paintById(r.paint).name + (cur === "auto" ? (d.paint ? " (from your car)" : " (default)") : "");
     $("detectNote").textContent = d.model
       ? "Detected from your car: Model " + d.model + (d.year ? " " + d.year : "") + ". Auto follows it."
-      : "DashPilot doesn't share your car's model, year or paint with dashboards yet. Until it does, Auto means Model 3, Original, Pearl White.";
+      : "DashPilot doesn't share your car's model or paint yet, so Auto means Model 3, Original, Pearl White.";
   }
   syncCarUi();
   // the 2D lane view takes the paint colour too
@@ -1203,7 +1216,7 @@ body.lay-a, body.lay-b, body.lay-c, body.lay-d { --sx: 0px; }
       $("stopTxt").setAttribute("y", sy - 12);
       $("stopTxt").textContent = s.isImperial ? Math.round(s.stopLineDist * 3.281) + " ft" : Math.round(s.stopLineDist) + " m";
     } else $("stop").setAttribute("opacity", 0);
-    var showLight = settings.laneView === false && tl > 0;
+    var showLight = !laneOn && tl > 0;
     $("light").hidden = !showLight;
     if (showLight) {
       $("lightDot").style.background = TL[tl];

@@ -6,8 +6,7 @@ const { chromium } = require('/opt/node-tools/node_modules/playwright');
  console.log('short press open?', await p.evaluate(() => !document.getElementById('sheet').hidden));
  await p.mouse.down(); await p.waitForTimeout(2000); await p.mouse.up();
  console.log('long press open?', await p.evaluate(() => !document.getElementById('sheet').hidden));
- await p.screenshot({ path: 'shots/sheet.png' });
- await p.click('#laneSwitch'); console.log('after switch', await p.evaluate(() => [document.body.className, localStorage.getItem('halo')]));
+  await p.click('#laneSeg [data-v="off"]'); console.log('after Off', await p.evaluate(() => [document.body.className, localStorage.getItem('halo')]));
  await p.click('#sheetDone'); console.log('closed?', await p.evaluate(() => document.getElementById('sheet').hidden));
  await p.reload(); await p.waitForTimeout(300); console.log('reload', await p.evaluate(() => document.body.className));
  // live data driving: opens too (no speed lock)
