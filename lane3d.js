@@ -129,18 +129,21 @@
 
   viz.classList.add("gl");
   var TL = [0, 0xff3b30, 0x2fcb6a, 0xffb020];
-  var steer = 0, scroll = 0, ap = 0, pw = 0, day = null, w = 0, h = 0, v3 = new T.Vector3();
+  var steer = 0, scroll = 0, ap = 0, pw = 0, day = null, neonWas = null, apHex = 0x3d7bff, w = 0, h = 0, v3 = new T.Vector3();
 
   Dash.onFrame(function (s, dt, now) {
     var on = s.renderQuality !== 1;
     viz.classList.toggle("gl", on);
-    if (!on || !viz.offsetParent) return;          // lane view hidden or low quality: draw nothing
+    if (!on || !viz.getClientRects().length) return;   // lane view hidden or low quality: draw nothing
 
     var cw = cv.clientWidth, ch = cv.clientHeight;
     if (cw !== w || ch !== h) { w = cw; h = ch; renderer.setSize(w, h, false); camera.aspect = w / Math.max(1, h); camera.updateProjectionMatrix(); }
 
-    if (day !== !s.darkMode) {
-      day = !s.darkMode;
+    // the Neon theme is always dark, and paints assist in its own colour
+    var neon = document.documentElement.classList.contains("neon"), dk = !s.darkMode && !neon;
+    if (day !== dk || neonWas !== neon) {
+      day = dk; neonWas = neon;
+      apHex = neon ? 0x39d5ff : 0x3d7bff; pathMat.color.setHex(apHex);
       var bg = new T.Color(getComputedStyle(document.documentElement).getPropertyValue("--bg").trim());
       scene.fog = new T.Fog(bg, 30, FAR - 5);
       roadMat.color.set(day ? 0xdfe2e7 : 0x14171c);
@@ -166,7 +169,7 @@
     // dashes scroll at road speed (US 10 ft dash, 30 ft gap is about 3 m / 9 m)
     var mps = s.isImperial ? s.egoSpeed * 0.447 : s.egoSpeed / 3.6;
     scroll = (scroll + mps * dt) % PERIOD;
-    dashMat.color.set(s.adasOn ? 0x3d7bff : (day ? 0x8e949c : 0x5a6069));
+    dashMat.color.set(s.adasOn ? apHex : (day ? 0x8e949c : 0x5a6069));
     var k = 0;
     [-LANE / 2, LANE / 2].forEach(function (x) {
       for (var i = 0; i < NDASH; i++) {

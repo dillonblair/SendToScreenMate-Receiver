@@ -21,6 +21,7 @@ Everything is built in code with three.js, so there are no model files or textur
 
 Long-press the dashboard to open Halo's settings, parked or on the move (handy for a passenger). Choices are saved with the app's dash-app storage. The sheet has three tabs: **Settings** (below), **Brightness** (further down) and **Drives**, which shows the drive in progress or the last one, this week's totals, the best 0–60, and switches for the 0–60 timer, green-light nudge and screensaver.
 
+- **Theme (Display tab):** Halo, or Neon: speed and power on two glowing magenta arc gauges with your car between them, over soft out-of-focus city lights. Every ring signal moves onto the arcs: Autopilot turns their outline cyan, turn signals sweep along them, a blind spot lights the middle of that side, and a red light or the speed warning lights their tops. Neon is always dark and has its own layout.
 - **Lane view:** turn the car-and-road view off; the speed moves to the centre and the light ahead moves under the sign.
 - **Car:** Auto, Model 3 or Model Y.
 - **Version:** Auto, Original, or Refresh (2024+ Model 3 Highland, 2025+ Model Y Juniper).

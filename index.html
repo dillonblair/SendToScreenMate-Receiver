@@ -263,13 +263,86 @@ body.lay-a, body.lay-b, body.lay-c, body.lay-d { --sx: 0px; }
 .wrap { opacity: var(--bk, 1); }
 .tripOn .wrap { opacity: calc(var(--bk, 1) * .1); }
 #briNow { color: var(--ink); }
+/* ---- Neon theme (Display → Theme). Two arc gauges, speed on the left and power on the
+   right, glowing magenta over soft city lights. Always dark. The arc centres and radius
+   come from build() as --gL, --gR, --gy and --gr, so the text sits inside the arcs. */
+:root.neon, :root.neon.day {
+  --bg: #0A0710; --ink: #FBF4FF; --dim: #A592B4; --faint: #2B2135; --band: #1C1524;
+  --lane: #4E4258; --road: #140F1B; --other: #6A5E75; --glass: #1A1522;
+  --ap: #39D5FF; --regen: #39E58C; --over: #FFB020; --over2: #FF7A1A; --pink: #FF4FD8;
+}
+.neon body { background: radial-gradient(ellipse 70% 38% at 50% 108%, rgba(150,30,150,.32), transparent 70%),
+  linear-gradient(#07050B, #0A0710 55%, #120A18); }
+.neon body:before { content: ""; position: fixed; inset: 0; pointer-events: none; opacity: var(--bk, 1); filter: saturate(1.2);
+  background:
+    radial-gradient(circle at 8% 14%, rgba(255,196,130,.16) 0, rgba(255,196,130,.08) 2.2%, transparent 3.4%),
+    radial-gradient(circle at 19% 30%, rgba(255,226,180,.12) 0, rgba(255,226,180,.05) 1.6%, transparent 2.6%),
+    radial-gradient(circle at 31% 9%, rgba(255,170,110,.12) 0, rgba(255,170,110,.05) 2.8%, transparent 4.2%),
+    radial-gradient(circle at 44% 24%, rgba(255,214,160,.09) 0, transparent 2.4%),
+    radial-gradient(circle at 57% 12%, rgba(255,140,200,.10) 0, rgba(255,140,200,.04) 2.6%, transparent 3.8%),
+    radial-gradient(circle at 68% 27%, rgba(255,205,150,.13) 0, rgba(255,205,150,.05) 1.8%, transparent 3%),
+    radial-gradient(circle at 81% 10%, rgba(255,185,120,.15) 0, rgba(255,185,120,.06) 2.4%, transparent 3.6%),
+    radial-gradient(circle at 93% 26%, rgba(255,230,190,.11) 0, rgba(255,230,190,.04) 1.8%, transparent 3%),
+    radial-gradient(circle at 25% 46%, rgba(200,120,255,.07) 0, transparent 3.2%),
+    radial-gradient(circle at 74% 44%, rgba(255,120,220,.07) 0, transparent 3.4%),
+    radial-gradient(ellipse 120% 40% at 50% 0%, rgba(120,70,40,.16), transparent 70%); }
+.neon .wrap { display: block; }
+.neon .side { display: contents; }
+.neon #spd { position: fixed; top: calc(var(--gy) - var(--u) * 13); left: calc(var(--gL) + var(--gr) * .06 - var(--u) * 26); width: calc(var(--u) * 52); }
+.neon .speed b { font-size: calc(var(--u) * 22); font-weight: 600; letter-spacing: -0.04em; line-height: .9;
+  text-shadow: 0 0 calc(var(--u) * 5) rgba(255,79,216,.28); }
+.neon .speed.d3 b { font-size: calc(var(--u) * 17.5); }
+.neon .speed .unit { margin-top: calc(var(--u) * 1); font-size: calc(var(--u) * 3.6); color: var(--ink); text-transform: lowercase; letter-spacing: .02em; }
+.neon .speed .power, .neon #kwWrap, .neon #setv { display: none; }
+.nset, .nkw, .aplbl, .blbl { display: none; }
+.neon .nset { display: block; margin-top: calc(var(--u) * 1.6); font-weight: 700; font-size: calc(var(--u) * 3); letter-spacing: .1em; color: var(--dim); }
+.neon .nset b { display: inline; font-size: 1.2em; color: var(--ink); letter-spacing: 0; text-shadow: none; margin-left: .3em; }
+.neon .nkw { display: block; position: fixed; top: calc(var(--gy) - var(--u) * 9); left: calc(var(--gR) - var(--gr) * .06 - var(--u) * 20);
+  width: calc(var(--u) * 40); text-align: center; }
+.nkw b { display: block; font-weight: 600; font-size: calc(var(--u) * 12); line-height: 1; letter-spacing: -0.03em; }
+.nkw span { display: block; margin-top: calc(var(--u) * .8); font-weight: 600; font-size: calc(var(--u) * 3); color: var(--ink); }
+.nkw.regen b { color: var(--regen); }
+.neon .odo { left: calc(var(--gR) - var(--gr) * .06 - var(--u) * 20); width: calc(var(--u) * 40); text-align: center;
+  top: calc(var(--gy) + var(--u) * 9); bottom: auto; font-size: calc(var(--u) * 2.8); }
+.neon .turn { position: fixed; top: calc(var(--u) * 3.6); width: calc(var(--u) * 5.4); height: calc(var(--u) * 5.4); }
+.neon .turn.l { left: calc(50% - var(--u) * 24); } .neon .turn.r { left: calc(50% + var(--u) * 18.6); right: auto; }
+.neon .top { top: calc(var(--u) * 4); left: 0; right: 0; justify-content: center; font-size: calc(var(--u) * 3.2); }
+.neon .top .right { flex-direction: row-reverse; gap: calc(var(--u) * 3); }
+.neon #clk { color: var(--ink); opacity: .8; }
+.neon #sign { position: fixed; top: calc(var(--u) * 10.5); left: 50%; transform: translateX(-50%) scale(.62); transform-origin: top center; }
+.neon .eu { box-shadow: 0 0 calc(var(--u) * 4) rgba(226,27,27,.45); }
+.neon .light { position: fixed; top: calc(var(--u) * 14); left: calc(50% + var(--u) * 10); font-size: calc(var(--u) * 3.4); }
+.neon .viz { position: fixed; top: calc(var(--u) * 21); margin: 0;
+  left: calc(var(--gL) + var(--gr) * .64); width: calc(100vw - 2 * (var(--gL) + var(--gr) * .64)); }
+.neon .viz #gl, .neon .viz svg { height: calc(var(--u) * 46); }
+.neon .ap { position: fixed; bottom: calc(var(--u) * 24); left: 50%; transform: translateX(-50%); gap: calc(var(--u) * 1.2); }
+.neon .ap svg { width: calc(var(--u) * 3.6); height: calc(var(--u) * 3.6); }
+.neon .aplbl { display: inline; font-weight: 700; font-size: calc(var(--u) * 3); letter-spacing: .1em; }
+.neon .ap.on { text-shadow: 0 0 calc(var(--u) * 2) rgba(57,213,255,.6); }
+.neon .batt { position: fixed; bottom: calc(var(--u) * 15); left: 50%; transform: translateX(-50%); gap: calc(var(--u) * 2.2); color: var(--ink); }
+.neon .blbl { display: inline; font-size: calc(var(--u) * 2.6); letter-spacing: .14em; color: var(--dim); }
+.neon .batt .cell { width: calc(var(--u) * 22); height: calc(var(--u) * 2.4); border: 1px solid rgba(255,79,216,.5); border-radius: 2px; transform: skewX(-24deg); }
+.neon .batt .cell:after { display: none; }
+.neon .batt .cell i { left: 1px; top: 1px; bottom: 1px; border-radius: 1px; background: linear-gradient(90deg, #8E2BC4, #FF4FD8 70%, #FFB8EF);
+  box-shadow: 0 0 calc(var(--u) * 1.6) rgba(255,79,216,.6); }
+.neon .gears { position: fixed; bottom: calc(var(--u) * 5.5); left: 50%; transform: translateX(-50%); display: flex; align-items: center;
+  gap: calc(var(--u) * 3.4); font-size: calc(var(--u) * 3.4); color: var(--dim); }
+.neon .gears span { display: grid; place-items: center; width: calc(var(--u) * 5.6); height: calc(var(--u) * 5.6); border-radius: 50%; }
+.neon .gears .on { color: #fff; background: radial-gradient(circle at 40% 35%, #FF9BEA, #FF4FD8 60%, #C02AA8);
+  box-shadow: 0 0 calc(var(--u) * 2.6) rgba(255,79,216,.75); text-shadow: none; }
+.neon .tells { bottom: calc(var(--u) * 1.2); font-size: calc(var(--u) * 2.8); }
+.neon.novis .wrap .viz { display: none; }
+.neon.novis .speed b { font-size: calc(var(--u) * 22); }
+.neon .switch[aria-checked="true"], .neon .sheet .done { background: #D93BBE; }
+.neon .seg button[aria-checked="true"] { color: #fff; background: #3A2547; }
+.neon .tabs button[aria-selected="true"] { background: #3A2547; }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
 </head>
 <body>
 <canvas id="c"></canvas>
 <div class="top">
-  <div class="batt" id="battWrap"><div class="cell"><i id="battFill"></i></div><span><span id="bat">—</span>%</span></div>
+  <div class="batt" id="battWrap"><small class="blbl">BATTERY</small><div class="cell"><i id="battFill"></i></div><span><span id="bat">—</span>%</span></div>
   <div class="right">
     <div class="phone" id="phoneWrap"><svg viewBox="0 0 12 20" aria-hidden="true"><rect x="1" y="1" width="10" height="18" rx="2.2" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="3.2" y="4" width="5.6" id="phoneFill" rx="0.6" fill="currentColor"/></svg><span><span id="phone">—</span>%</span></div>
     <div id="clk">—</div>
@@ -282,6 +355,7 @@ body.lay-a, body.lay-b, body.lay-c, body.lay-d { --sx: 0px; }
     <b id="v">0</b>
     <div class="unit" id="unit">MPH</div>
     <div class="power"><i id="pw"></i></div>
+    <div class="nset" id="nset"></div>
     <div class="kw" id="kwWrap"><span id="kw">0</span> kW</div>
     <svg class="turn l" id="turnL" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 4 2 12l8 8v-5h12V9H10z"/></svg>
     <svg class="turn r" id="turnR" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4l8 8-8 8v-5H2V9h12z"/></svg>
@@ -340,11 +414,12 @@ body.lay-a, body.lay-b, body.lay-c, body.lay-d { --sx: 0px; }
     <div id="sign"></div>
     <div class="ap" id="ap">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="9.5"/><circle cx="12" cy="12" r="2.2" fill="currentColor"/><path d="M2.8 10.5 Q12 8 21.2 10.5 M12 14.2 V21.4"/></svg>
-      <b id="setv">—</b>
+      <span class="aplbl" id="aplbl">ASSIST</span><b id="setv">—</b>
     </div>
     <div class="light" id="light" hidden><i id="lightDot"></i><span id="lightTxt"></span></div>
   </div>
 </div>
+<div class="nkw" id="nkw"><b id="nkwv">0</b><span>kW</span></div>
 <div class="tells" id="tells"></div>
 <div class="pressRing" id="pressRing" hidden></div>
 <div class="trip" id="trip" hidden><div class="in"><div class="drive" id="tripBody"></div><div class="tap">Tap to close</div></div></div>
@@ -384,6 +459,7 @@ body.lay-a, body.lay-b, body.lay-c, body.lay-d { --sx: 0px; }
           <small>Dims the ring's glow and Halo's text. Red hazards, turn signals and the speed warning on the ring stay at full strength.</small>
         </div>
         <p class="hint">Now: <span id="briNow">100%</span></p>
+        <p class="hint">Halo can't change the phone's own brightness or the car's lights; DashPilot doesn't allow it. Keep the phone's auto-brightness on, and use this to take the edge off at night. Works best with the app's dark mode.</p>
       </div>
       <div class="col">
         <div class="field">
@@ -402,13 +478,19 @@ body.lay-a, body.lay-b, body.lay-c, body.lay-d { --sx: 0px; }
       </div>
       <div class="col">
         <div class="field">
+          <b id="themeLbl">Theme</b>
+          <div class="seg" role="radiogroup" aria-labelledby="themeLbl" data-key="theme" data-def="halo">
+            <button type="button" role="radio" data-v="halo">Halo</button><button type="button" role="radio" data-v="neon">Neon</button>
+          </div>
+          <small>Neon: glowing arc gauges for speed and power. Always dark.</small>
+        </div>
+        <div class="field">
           <b id="layLbl">Layout</b>
-          <div class="seg" role="radiogroup" aria-labelledby="layLbl" data-key="layout" data-def="classic">
+          <div class="seg" role="radiogroup" aria-labelledby="layLbl" data-key="layout" data-def="classic" id="laySeg">
             <button type="button" role="radio" data-v="classic">Classic</button><button type="button" role="radio" data-v="a">Top</button><button type="button" role="radio" data-v="b">Beside</button><button type="button" role="radio" data-v="c">Below</button><button type="button" role="radio" data-v="d">Over</button>
           </div>
-          <small>Where the gears, speed-limit sign and Autopilot sit. All but Classic keep them clear of an iPhone notch.</small>
+          <small id="layNote">Where the gears, speed-limit sign and Autopilot sit. All but Classic keep them clear of an iPhone notch.</small>
         </div>
-        <p class="hint">Halo can't change the phone's own brightness or the car's lights; DashPilot doesn't allow it. Keep the phone's auto-brightness on, and use this to take the edge off at night. Works best with the app's dark mode.</p>
       </div>
     </div>
     <div class="cols" id="panelSet" role="tabpanel">
@@ -485,9 +567,11 @@ body.lay-a, body.lay-b, body.lay-c, body.lay-d { --sx: 0px; }
     }
     return sx;
   }
+  var neon = false, G = null;   // Neon theme: arc gauge geometry, in canvas pixels
   function build() {
     W = cv.width = innerWidth * dpr; H = cv.height = innerHeight * dpr;
     var sx = sideInset() * dpr;
+    if (neon) { buildNeon(sx); return; }
     var m = Math.min(H, W / 2.1) * 0.03, r = Math.min(H, W) * 0.08, x0 = m + sx, y0 = m, x1 = W - m - sx, y1 = H - m;
     P = []; idx = {};
     function line(ax, ay, bx, by) { var n = Math.ceil(Math.hypot(bx - ax, by - ay) / 6); for (var i = 0; i < n; i++) P.push([ax + (bx - ax) * i / n, ay + (by - ay) * i / n]); }
@@ -499,6 +583,29 @@ body.lay-a, body.lay-b, body.lay-c, body.lay-d { --sx: 0px; }
     line(x0, y1 - r, x0, H / 2); idx.LM = P.length; line(x0, H / 2, x0, y0 + r); arc(x0 + r, y0 + r, Math.PI);
     line(x0 + r, y0, W / 2, y0); idx.N = P.length;
   }
+  // Neon: two arcs, open toward the middle. The left one (speed) runs from its bottom
+  // end round the outside to its top; the right one (power) mirrors it. The signal path
+  // P runs clockwise from top centre along the outside of both arcs, with a gap (null)
+  // between them at the top and bottom, so every ring signal lands on the arcs.
+  function buildNeon(sx) {
+    var lab = Math.min(H, W) * 0.06, r = Math.min(H * 0.44, (W - 2 * sx) * 0.2), cy = H * 0.52;
+    var cl = sx + Math.min(H, W) * 0.03 + lab + r, cr = W - cl, SPAN = 210 * Math.PI / 180;
+    G = { r: r, cy: cy, cl: cl, cr: cr, span: SPAN,
+      L0: 75 * Math.PI / 180,                     // left arc: value 0 at the bottom end, rising clockwise
+      R0: 105 * Math.PI / 180 };                   // right arc: value 0 at the bottom end, rising anticlockwise
+    var ro = r + Math.max(4, r * 0.035), n = Math.ceil(SPAN * ro / 6), i, a;
+    P = [null]; idx = {};
+    // both arcs are symmetric about their outermost point, so the side middles are halfway
+    for (i = 0; i <= n; i++) { a = G.R0 - SPAN + SPAN * i / n; P.push([cr + Math.cos(a) * ro, cy + Math.sin(a) * ro]); }
+    idx.RM = 1 + Math.round(n / 2);
+    idx.BC = P.length; P.push(null);
+    for (i = 0; i <= n; i++) { a = G.L0 + SPAN * i / n; P.push([cl + Math.cos(a) * ro, cy + Math.sin(a) * ro]); }
+    idx.LM = idx.BC + 1 + Math.round(n / 2);
+    idx.N = P.length;
+    var st = document.documentElement.style;
+    st.setProperty("--gL", cl / dpr + "px"); st.setProperty("--gR", cr / dpr + "px");
+    st.setProperty("--gy", cy / dpr + "px"); st.setProperty("--gr", r / dpr + "px");
+  }
   build(); addEventListener("resize", build);
   var reduceMotion = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
   function trace(a, b) {
@@ -506,6 +613,7 @@ body.lay-a, body.lay-b, body.lay-c, body.lay-d { --sx: 0px; }
     ctx.beginPath();
     for (var i = a, first = true; step > 0 ? i <= b : i >= b; i += step) {
       var p = P[((Math.round(i) % n) + n) % n];
+      if (!p) { first = true; continue; }
       first ? ctx.moveTo(p[0], p[1]) : ctx.lineTo(p[0], p[1]); first = false;
     }
     ctx.lineCap = "round"; ctx.lineJoin = "round";
@@ -533,6 +641,7 @@ body.lay-a, body.lay-b, body.lay-c, body.lay-d { --sx: 0px; }
   // bright leading tip for the turn sweep
   function flare(i, color, radius) {
     var p = P[((Math.round(i) % idx.N) + idx.N) % idx.N], r = radius * dpr, h = hex(color);
+    if (!p) return;
     var g = ctx.createRadialGradient(p[0], p[1], 0, p[0], p[1], r);
     g.addColorStop(0, "rgba(255,255,255,.95)"); g.addColorStop(0.25, "rgba(" + h + ",.8)"); g.addColorStop(1, "rgba(" + h + ",0)");
     ctx.fillStyle = g; ctx.beginPath(); ctx.arc(p[0], p[1], r, 0, Math.PI * 2); ctx.fill();
@@ -575,11 +684,20 @@ body.lay-a, body.lay-b, body.lay-c, body.lay-d { --sx: 0px; }
   // #lay-a ... #lay-d in the URL previews a layout without saving it
   function applyLayout() {
     var m = location.hash.match(/lay-(classic|[a-d])/), v = m ? m[1] : settings.layout || "classic";
+    if (neon) v = "classic";      // Neon has its own arrangement
     ["a", "b", "c", "d"].forEach(function (k) { document.body.classList.toggle("lay-" + k, v === k); });
     build(); lastRing = "";      // the ring's notch margin depends on the layout
   }
   applyLayout();
   window.addEventListener("hashchange", applyLayout);
+  // #neon in the URL previews the Neon theme without saving it
+  function applyTheme() {
+    neon = location.hash.indexOf("neon") >= 0 || settings.theme === "neon";
+    document.documentElement.classList.toggle("neon", neon);
+    day = null;                  // re-read the theme's colours on the next frame
+    applyLayout();
+  }
+  window.addEventListener("hashchange", applyTheme);
   // demo page buttons switch modes through the hash
   window.addEventListener("hashchange", function () { settings.laneView = location.hash.indexOf("novis") < 0; applyLaneView(); });
   function host(androidMethod, iosHandler, value) {
@@ -655,7 +773,7 @@ body.lay-a, body.lay-b, body.lay-c, body.lay-d { --sx: 0px; }
   sw.innerHTML = '<button type="button" role="radio" class="auto" data-v="auto" aria-label="Auto">AUTO</button>' +
     HaloCar.PAINTS.map(function (p) { return '<button type="button" role="radio" data-v="' + p.id + '" aria-label="' + p.name + '" style="background-color:' + p.hex + '"></button>'; }).join("");
   function pick(group, key, v) {
-    settings[key] = v; saveSettings(settings); syncCarUi(); applyLayout();
+    settings[key] = v; saveSettings(settings); applyTheme(); syncCarUi();
     if (window.HaloCarChanged) window.HaloCarChanged();
   }
   [].forEach.call(document.querySelectorAll(".seg"), function (g) {
@@ -670,6 +788,9 @@ body.lay-a, body.lay-b, body.lay-c, body.lay-d { --sx: 0px; }
     var offs = Dash.state.isImperial === false ? WARN_KMH : WARN_MPH;
     [].forEach.call($("overSeg").children, function (b, i) { b.textContent = "+" + offs[i]; });
     $("overSeg").setAttribute("aria-disabled", settings.warn === "off" ? "true" : "false");
+    $("laySeg").setAttribute("aria-disabled", neon ? "true" : "false");
+    $("layNote").textContent = neon ? "Neon has its own layout, already clear of an iPhone notch. These apply to the Halo theme."
+      : "Where the gears, speed-limit sign and Autopilot sit. All but Classic keep them clear of an iPhone notch.";
     var fixed = (settings.bright || "auto") !== "auto";
     $("nightSeg").setAttribute("aria-disabled", fixed ? "true" : "false");
     $("nightBySeg").setAttribute("aria-disabled", fixed ? "true" : "false");
@@ -698,10 +819,11 @@ body.lay-a, body.lay-b, body.lay-c, body.lay-d { --sx: 0px; }
   var C = {}, day = null, ap = 0, pw = 0, steer = 0, roll = 0, bl = { l: 0, r: 0 }, signKey = "";
   var TL = ["", "#FF3B30", "#2FCB6A", "#FFB020"];
   var gearsEl = $("gears").children;
+  applyTheme();
 
   Dash.onFrame(function (s, dt, now) {
-    if (day !== !s.darkMode) {
-      day = !s.darkMode; document.documentElement.classList.toggle("day", day);
+    if (day !== (!s.darkMode && !neon)) {
+      day = !s.darkMode && !neon; document.documentElement.classList.toggle("day", day);
       ["--band", "--ap"].forEach(function (k) { C[k] = css(k); });
     }
     var hq = s.renderQuality !== 1;
@@ -726,7 +848,8 @@ body.lay-a, body.lay-b, body.lay-c, body.lay-d { --sx: 0px; }
     updateWarn(s);
     // ---- halo (redrawn only while something on it moves or changes)
     var ringKey = [s.adasOn, s.leftBlinker, s.rightBlinker, s.leftBlindSpot, s.rightBlindSpot, lightAhead(s),
-      Math.round(s.stopLineDist), warnStage, settings.warn, Math.round(warnBy), day, W, H, saving, briLevel].join();
+      Math.round(s.stopLineDist), warnStage, settings.warn, Math.round(warnBy), day, W, H, saving, briLevel,
+      neon ? [Math.round(s.egoSpeed * 4), Math.round(pw * 2), s.maxDischargePower, s.isImperial].join("/") : ""].join();
     var ringMoving = (ap > 0.005 && ap < 0.995) || bl.l || bl.r ||
       s.leftBlindSpot === 2 || s.rightBlindSpot === 2 || drainT || nudgeT || (saving && !reduceMotion);
     if (ringMoving || ringKey !== lastRing) { lastRing = ringKey; drawRing(); }
@@ -779,10 +902,88 @@ body.lay-a, body.lay-b, body.lay-c, body.lay-d { --sx: 0px; }
     warnStage = mode === "off" ? 0 : up > warnStage ? up : Math.min(warnStage, down);
     warnBy = Math.max(0, by);
   }
+  // ---- Neon gauges: speed on the left arc, power on the right
+  var PAL = { pink: ["#5E1488", "#D63CC0", "#FFA6EC"], amber: ["#7A3300", "#FFB020", "#FFE2A6"],
+    orange: ["#6E1C00", "#FF7A1A", "#FFC69A"], green: ["#0B5A31", "#39E58C", "#C4FFDF"] };
+  function lerpHex(a, b, k) { var x = hex(a), y = hex(b); return "rgb(" + x.map(function (v, i) { return Math.round(v + (y[i] - v) * k); }).join(",") + ")"; }
+  function palAt(p, k) { return k < 0.6 ? lerpHex(p[0], p[1], k / 0.6) : lerpHex(p[1], p[2], (k - 0.6) / 0.4); }
+  // side -1 is the left arc (rises clockwise), +1 the right (rises anticlockwise)
+  function angAt(side, f) { return side < 0 ? G.L0 + f * G.span : G.R0 - f * G.span; }
+  function arcPath(side, rad, f0, f1) {
+    ctx.beginPath(); ctx.arc(side < 0 ? G.cl : G.cr, G.cy, rad, angAt(side, f0), angAt(side, f1), side > 0);
+  }
+  function gauge(side, ticks, fills, hq) {
+    var r = G.r, bw = r * 0.19, rb = r - r * 0.075 - bw / 2, cx = side < 0 ? G.cl : G.cr, pink = "#FF4FD8";
+    ctx.lineCap = "butt";
+    // the glowing outline
+    if (hq) [[9, 0.05], [5, 0.1]].forEach(function (l) { arcPath(side, r, 0, 1); ctx.strokeStyle = pink; ctx.globalAlpha = l[1] * ringDim; ctx.lineWidth = l[0] * dpr; ctx.stroke(); });
+    arcPath(side, r, 0, 1); ctx.strokeStyle = pink; ctx.globalAlpha = 0.9 * ringDim; ctx.lineWidth = 2 * dpr; ctx.stroke();
+    arcPath(side, r, 0, 1); ctx.strokeStyle = "#FFD3F5"; ctx.globalAlpha = 0.7 * ringDim; ctx.lineWidth = 0.8 * dpr; ctx.stroke();
+    // the empty track
+    arcPath(side, rb, 0, 1); ctx.strokeStyle = pink; ctx.globalAlpha = 0.06 * ringDim; ctx.lineWidth = bw; ctx.stroke();
+    // ticks and numbers outside the outline
+    ctx.font = "600 " + Math.round(r * 0.072) + "px Montserrat, system-ui, sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ticks.forEach(function (t) {
+      var a = angAt(side, t[0]), c = Math.cos(a), sn = Math.sin(a), len = t[1] != null ? r * 0.06 : r * 0.03;
+      ctx.beginPath(); ctx.moveTo(cx + c * r, G.cy + sn * r); ctx.lineTo(cx + c * (r - len), G.cy + sn * (r - len));
+      ctx.strokeStyle = pink; ctx.globalAlpha = (t[1] != null ? 0.9 : 0.45) * ringDim; ctx.lineWidth = 1.5 * dpr; ctx.stroke();
+      if (t[1] == null) return;
+      var lr = r + r * 0.11;
+      ctx.fillStyle = "#F3E6FA"; ctx.globalAlpha = 0.72 * ringDim; ctx.fillText(t[1], cx + c * lr, G.cy + sn * lr);
+    });
+    // the value: a thick band, dark at its start and bright at its leading edge
+    fills.forEach(function (fl) {
+      var f0 = fl[0], f1 = fl[1], p = fl[2], lead = fl[3];
+      if (f1 - f0 < 0.002) return;
+      if (hq) [[1.9, 0.08], [1.35, 0.12]].forEach(function (l) { arcPath(side, rb, f0, f1); ctx.strokeStyle = p[1]; ctx.globalAlpha = l[1] * ringDim; ctx.lineWidth = bw * l[0]; ctx.stroke(); });
+      ctx.globalAlpha = ringDim; ctx.lineWidth = bw;
+      if (ctx.createConicGradient) {
+        // one smooth sweep: the conic runs clockwise, so start it at whichever end is clockwise-first
+        var lo = side < 0 ? f0 : f1, g = ctx.createConicGradient(angAt(side, lo), cx, G.cy), sp = (f1 - f0) * G.span / (2 * Math.PI);
+        for (var q = 0; q <= 8; q++) g.addColorStop(sp * q / 8, palAt(p, (side < 0) === (lead > 0) ? q / 8 : 1 - q / 8));
+        g.addColorStop(Math.min(1, sp + 0.001), palAt(p, (side < 0) === (lead > 0) ? 1 : 0));
+        ctx.strokeStyle = g; arcPath(side, rb, f0, f1); ctx.stroke();
+      } else {
+        var n = Math.max(2, Math.ceil((f1 - f0) * 60));
+        for (var k = 0; k < n; k++) {
+          var a = f0 + (f1 - f0) * k / n, b = f0 + (f1 - f0) * (k + 1) / n + 0.002;
+          ctx.strokeStyle = palAt(p, lead > 0 ? (k + 1) / n : 1 - k / n); arcPath(side, rb, Math.min(a, f1), Math.min(b, f1)); ctx.stroke();
+        }
+      }
+      // a bright edge where the value is, and a sprinkle of light in the band
+      var ea = angAt(side, lead > 0 ? f1 : f0), c = Math.cos(ea), sn = Math.sin(ea);
+      ctx.beginPath(); ctx.moveTo(cx + c * (rb - bw / 2), G.cy + sn * (rb - bw / 2)); ctx.lineTo(cx + c * (rb + bw / 2), G.cy + sn * (rb + bw / 2));
+      ctx.strokeStyle = "#fff"; ctx.globalAlpha = 0.85 * ringDim; ctx.lineWidth = 2 * dpr; ctx.stroke();
+      if (hq) for (var j = 0; j < 46; j++) {
+        var fj = (j * 0.618034) % 1, dj = ((j * 0.414214) % 1) - 0.5;
+        if (fj < f0 || fj > f1) continue;
+        var aj = angAt(side, fj), rj = rb + dj * bw * 0.8;
+        ctx.beginPath(); ctx.arc(cx + Math.cos(aj) * rj, G.cy + Math.sin(aj) * rj, (0.5 + (j % 3) * 0.45) * dpr, 0, Math.PI * 2);
+        ctx.fillStyle = "#fff"; ctx.globalAlpha = (0.25 + (j % 4) * 0.12) * ringDim; ctx.fill();
+      }
+    });
+    ctx.globalAlpha = 1; ctx.lineCap = "round";
+  }
+  var REGEN_Z = 0.16;            // where 0 kW sits on the power arc; regen fills below it
+  function drawGauges(s, hq) {
+    var imp = s.isImperial !== false, max = imp ? 140 : 200, step = imp ? 20 : 40, ticks = [], v;
+    for (v = 0; v <= max; v += step / 2) ticks.push([v / max, v % step ? null : String(v)]);
+    var pal = warnStage === 2 ? PAL.orange : warnStage === 1 ? PAL.amber : PAL.pink;
+    gauge(-1, ticks, [[0, Math.min(1, Math.max(0, s.egoSpeed) / max), pal, 1]], hq);
+    // power: kW when the car reports its limit, otherwise percent of it
+    var md = s.maxDischargePower > 0 ? s.maxDischargePower : 100, ps = md > 400 ? 100 : md > 160 ? 50 : 25;
+    ticks = [];
+    for (v = 0; v <= md + 0.01; v += ps / 2) ticks.push([REGEN_Z + (1 - REGEN_Z) * v / md, v % ps ? null : String(v)]);
+    ticks.push([0, null]);
+    var fills = pw >= 0 ? [[REGEN_Z, REGEN_Z + (1 - REGEN_Z) * Math.min(1, pw / 100), PAL.pink, 1]]
+      : [[REGEN_Z * (1 - Math.min(1, -pw / 100)), REGEN_Z, PAL.green, -1]];
+    gauge(1, ticks, fills, hq);
+  }
   function drawRing() {
     var s = Dash.state, hq = s.renderQuality !== 1, u = Math.min(H, W / 2.1) / dpr / 100, N = idx.N, RM = idx.RM, BC = idx.BC, LM = idx.LM, now = performance.now() / 1000;
     ctx.clearRect(0, 0, W, H);
-    ctx.globalAlpha = ringDim; seg(0, N, C["--band"], u * 1); ctx.globalAlpha = 1;
+    if (!neon) { ctx.globalAlpha = ringDim; seg(0, N, C["--band"], u * 1); ctx.globalAlpha = 1; }
+    else if (!(window.HaloDrives && HaloDrives.saver)) drawGauges(s, hq);
     // parked screensaver: the ring breathes slowly and nothing else is drawn
     if (window.HaloDrives && HaloDrives.saver) {
       glow(0, N, day ? "#8A8F98" : "#9AA3B0", u * 0.8, ringDim * (reduceMotion ? 0.35 : 0.22 + 0.2 * Math.sin(now * Math.PI / 3)), hq);
@@ -834,6 +1035,7 @@ body.lay-a, body.lay-b, body.lay-c, body.lay-d { --sx: 0px; }
     var showBs = s.alwaysOnBlindSpotMonitor || s.leftBlinker || s.rightBlinker || s.dataSourceType === "demo";
     // ---- speed + power
     $("v").textContent = Math.round(s.egoSpeed);
+    $("spd").classList.toggle("d3", s.egoSpeed >= 99.5);
     $("unit").textContent = s.isImperial ? "MPH" : "KM/H";
     $("spd").classList.toggle("over", warnStage === 1);
     $("spd").classList.toggle("over2", warnStage === 2);
@@ -911,6 +1113,14 @@ body.lay-a, body.lay-b, body.lay-c, body.lay-d { --sx: 0px; }
     $("setv").hidden = setBad;
     $("setv").textContent = s.adasOn && s.accSetSpeed > 0 ? Math.round(s.accSetSpeed) : "—";
     $("ap").classList.toggle("on", !!s.adasOn);
+    if (neon) {
+      $("aplbl").textContent = s.adasOn ? "ASSIST ON" : "ASSIST OFF";
+      $("nset").innerHTML = s.adasOn && s.accSetSpeed > 0 && !setBad ? "SET<b>" + Math.round(s.accSetSpeed) + "</b>" : "";
+      var hasMax = s.maxDischargePower > 0 || s.maxRegenPower > 0;
+      $("nkwv").textContent = hasMax ? Math.round(kw) : Math.round(pw);
+      $("nkw").lastChild.textContent = hasMax ? "kW" : "% power";
+      $("nkw").classList.toggle("regen", (hasMax ? kw : pw) < -0.5);
+    }
 
     var c = Dash.charge(s);
     $("battWrap").hidden = c < 0 || !s.showCarBattery;
