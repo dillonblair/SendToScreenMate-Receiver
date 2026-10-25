@@ -189,8 +189,8 @@ body.lay-a, body.lay-b, body.lay-c, body.lay-d { --sx: 0px; }
   #sheet .done { padding-block: calc(var(--u) * 1.6); }
   .col { gap: calc(var(--u) * 3); }
 }
-/* wide phone screens have room for three columns, so nothing needs scrolling */
-@media (min-aspect-ratio: 16/9) {
+/* wide phone screens and the unfolded iPhone Duo have room for three columns, so nothing needs scrolling */
+@media (min-aspect-ratio: 4/3) {
   .cols { grid-template-columns: 1fr 1fr 1fr; gap: calc(var(--u) * 4); }
   .cols > .col:first-child { grid-row: auto; }
   .sheet .card { width: min(96vw - 2 * var(--sx), calc(var(--u) * 196)); }
@@ -336,6 +336,45 @@ body.lay-a, body.lay-b, body.lay-c, body.lay-d { --sx: 0px; }
 .neon .switch[aria-checked="true"], .neon .sheet .done { background: #D93BBE; }
 .neon .seg button[aria-checked="true"] { color: #fff; background: #3A2547; }
 .neon .tabs button[aria-selected="true"] { background: #3A2547; }
+/* ---- the unfolded iPhone Duo (and other near-square screens, 10:7): use the extra height */
+@media (max-aspect-ratio: 16/10) { :root { --u: min(0.88vh, 0.6vw); } .sheet .card { --u: min(0.8vh, 0.54vw); } }
+/* ---- HUD mode (the HUD button; double-tap to leave): lay the phone flat under the
+   windshield. Pure black (black doesn't reflect), one big bright speed, flipped so the
+   reflection reads the right way up. A dash app can only draw on the screen it's shown
+   on, so on an unfolded iPhone Duo this is the main screen, not the back one. */
+.hudBtn { position: absolute; right: calc(var(--u) * 10 + var(--sx)); bottom: calc(var(--u) * 5.5); z-index: 2;
+  font: 700 calc(var(--u) * 3) "Montserrat", system-ui, sans-serif; letter-spacing: .14em; color: var(--dim);
+  background: transparent; border: 1px solid var(--faint); border-radius: 999px; padding: 0 calc(var(--u) * 3);
+  min-height: 36px; min-width: 64px; cursor: pointer; opacity: var(--bk, 1); }
+.hudBtn:focus-visible { outline: 2px solid var(--ap); outline-offset: 2px; }
+.saved .hudBtn, .hudOn .hudBtn { display: none; }
+.neon .hudBtn { right: calc(var(--u) * 4 + var(--sx)); bottom: calc(var(--u) * 3); }
+.hudOn .wrap, .hudOn #c, .hudOn .top, .hudOn .odo, .hudOn .nkw { display: none; }
+.hud { position: fixed; inset: 0; z-index: 7; background: #000; color: #F2FFF9; overflow: hidden; }
+.hud .hin { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: 2vmin; }
+.hud.mirror .hin { transform: scaleY(-1); }
+.hrow { display: flex; align-items: center; gap: 5vmin; }
+.hrow svg { width: 16vmin; height: 16vmin; fill: #39FF8E; opacity: .06; }
+.hrow svg.on { opacity: 1; }
+.hspd { text-align: center; min-width: 50vmin; }
+.hspd b { display: block; font-weight: 600; font-size: min(46vh, 30vw); line-height: .85; letter-spacing: -0.04em; }
+.hspd small { display: block; font-weight: 700; font-size: 5vmin; letter-spacing: .2em; opacity: .7; }
+.hud.over .hspd b { color: #FFB020; } .hud.over2 .hspd b { color: #FF7A1A; }
+.hsub { display: flex; gap: 6vmin; align-items: center; font-weight: 700; font-size: 6.5vmin; letter-spacing: .06em; }
+.hsub span:empty { display: none; }
+.hsub .set { color: #39D5FF; }
+.hsub i { display: inline-block; width: 4.6vmin; height: 4.6vmin; border-radius: 50%; margin-right: 1.6vmin; vertical-align: -.4vmin; }
+.hbs { position: absolute; top: 18%; bottom: 18%; width: 3.2vmin; border-radius: 9px; background: #FF3B30; opacity: 0; }
+.hbs.l { left: 3vmin; } .hbs.r { right: 3vmin; }
+.hbs.on { opacity: 1; } .hbs.urgent { animation: hbs .25s steps(2) infinite; }
+@keyframes hbs { 50% { opacity: .35; } }
+.hsub { flex-wrap: wrap; justify-content: center; row-gap: 2vmin; }
+.hsub span { white-space: nowrap; }
+@media (orientation: portrait) {
+  .hrow { gap: 2vmin; } .hrow svg { width: 12vmin; height: 12vmin; } .hspd { min-width: 0; }
+  .hspd b { font-size: 34vw; } .hsub { font-size: 7vmin; column-gap: 5vmin; max-width: 92vw; }
+}
+.hexit { position: absolute; left: 0; right: 0; bottom: 4vmin; text-align: center; font-weight: 600; font-size: 3.4vmin; color: #6B7079; transition: opacity 1s; }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
 </head>
@@ -421,6 +460,19 @@ body.lay-a, body.lay-b, body.lay-c, body.lay-d { --sx: 0px; }
 </div>
 <div class="nkw" id="nkw"><b id="nkwv">0</b><span>kW</span></div>
 <div class="tells" id="tells"></div>
+<button type="button" class="hudBtn" id="hudBtn" aria-label="HUD mode: show a windshield head-up display">HUD</button>
+<div class="hud" id="hud" hidden>
+  <div class="hin">
+    <div class="hrow">
+      <svg id="hTurnL" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 4 2 12l8 8v-5h12V9H10z"/></svg>
+      <div class="hspd"><b id="hv">0</b><small id="hu">MPH</small></div>
+      <svg id="hTurnR" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4l8 8-8 8v-5H2V9h12z"/></svg>
+    </div>
+    <div class="hsub"><span id="hlim"></span><span class="set" id="hset"></span><span id="hlight"></span></div>
+  </div>
+  <i class="hbs l" id="hbsL"></i><i class="hbs r" id="hbsR"></i>
+  <div class="hexit" id="hexit">Double-tap to leave HUD</div>
+</div>
 <div class="pressRing" id="pressRing" hidden></div>
 <div class="trip" id="trip" hidden><div class="in"><div class="drive" id="tripBody"></div><div class="tap">Tap to close</div></div></div>
 <div class="saver" id="saver" hidden><div class="in" id="saverIn"><b id="saverClock"></b><div id="saverSub"></div></div></div>
@@ -456,10 +508,16 @@ body.lay-a, body.lay-b, body.lay-c, body.lay-d { --sx: 0px; }
           <div class="seg" role="radiogroup" aria-labelledby="briLbl" data-key="bright" data-def="auto">
             <button type="button" role="radio" data-v="auto">Auto</button><button type="button" role="radio" data-v="100">100%</button><button type="button" role="radio" data-v="80">80%</button><button type="button" role="radio" data-v="60">60%</button><button type="button" role="radio" data-v="40">40%</button>
           </div>
-          <small>Dims the ring's glow and Halo's text. Red hazards, turn signals and the speed warning on the ring stay at full strength.</small>
+          <small>Dims the glow and text. Hazards, turn signals and speed warnings stay full strength.</small>
         </div>
         <p class="hint">Now: <span id="briNow">100%</span></p>
-        <p class="hint">Halo can't change the phone's own brightness or the car's lights; DashPilot doesn't allow it. Keep the phone's auto-brightness on, and use this to take the edge off at night. Works best with the app's dark mode.</p>
+        <div class="field">
+          <b id="hudLbl">HUD image</b>
+          <div class="seg" role="radiogroup" aria-labelledby="hudLbl" data-key="hudFlip" data-def="flip">
+            <button type="button" role="radio" data-v="flip">Flipped</button><button type="button" role="radio" data-v="normal">Normal</button>
+          </div>
+          <small>Flipped reads right in the windshield: phone flat, top edge toward the glass.</small>
+        </div>
       </div>
       <div class="col">
         <div class="field">
@@ -729,7 +787,7 @@ body.lay-a, body.lay-b, body.lay-c, body.lay-d { --sx: 0px; }
     r.hidden = false; r.style.left = x + "px"; r.style.top = y + "px"; r.style.setProperty("--k", Math.min(1, k));
   }
   function startPress(x, y) {
-    if (!$("sheet").hidden) return;
+    if (!$("sheet").hidden || !$("hud").hidden) return;
     press = { x: x, y: y, t: performance.now(), moved: false };
   }
   function movePress(x, y) {
@@ -756,6 +814,24 @@ body.lay-a, body.lay-b, body.lay-c, body.lay-d { --sx: 0px; }
   Dash.onFrame(checkPress);
   setInterval(checkPress, 100);          // also when frames are slow
   document.addEventListener("contextmenu", function (e) { e.preventDefault(); });
+  // ---- HUD mode: the HUD button turns the whole screen into a windshield HUD, a double
+  // tap turns it back. Remembered, so a reload mid-drive stays in HUD.
+  var hudTap = 0, hudHintT = 0;
+  function setHud(on) {
+    settings.hud = on; saveSettings(settings);
+    $("hud").hidden = !on; document.body.classList.toggle("hudOn", on);
+    $("hud").classList.toggle("mirror", settings.hudFlip !== "normal");
+    if (on) { $("hexit").style.opacity = 1; clearTimeout(hudHintT); hudHintT = setTimeout(function () { $("hexit").style.opacity = 0; }, 4000); }
+    lastRing = "";
+  }
+  $("hudBtn").addEventListener("click", function () { setHud(true); });
+  $("hud").addEventListener("click", function () {
+    var t = performance.now();
+    if (t - hudTap < 400) { hudTap = 0; setHud(false); return; }
+    hudTap = t; $("hexit").style.opacity = 1; clearTimeout(hudHintT);
+    hudHintT = setTimeout(function () { $("hexit").style.opacity = 0; }, 2500);
+  });
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape" && settings.hud) setHud(false); });
   // the light ahead (ring, stop line, distance) can be switched off; on by default
   function lightAhead(s) { return settings.stopLine === false ? 0 : s.trafficLightColor; }
   $("lightSwitch").addEventListener("click", function () {
@@ -776,6 +852,7 @@ body.lay-a, body.lay-b, body.lay-c, body.lay-d { --sx: 0px; }
   function pick(group, key, v) {
     if (key === "theme") themePreview = false;      // the driver's choice beats a #neon preview
     settings[key] = v; saveSettings(settings); applyTheme(); syncCarUi();
+    $("hud").classList.toggle("mirror", settings.hudFlip !== "normal");
     if (window.HaloCarChanged) window.HaloCarChanged();
   }
   [].forEach.call(document.querySelectorAll(".seg"), function (g) {
@@ -822,6 +899,7 @@ body.lay-a, body.lay-b, body.lay-c, body.lay-d { --sx: 0px; }
   var TL = ["", "#FF3B30", "#2FCB6A", "#FFB020"];
   var gearsEl = $("gears").children;
   applyTheme(); syncCarUi();
+  if (settings.hud) setHud(true);
 
   Dash.onFrame(function (s, dt, now) {
     if (day !== (!s.darkMode && !neon)) {
@@ -1124,6 +1202,18 @@ body.lay-a, body.lay-b, body.lay-c, body.lay-d { --sx: 0px; }
       $("nkw").classList.toggle("regen", (hasMax ? kw : pw) < -0.5);
     }
 
+    if (settings.hud) {
+      $("hv").textContent = Math.round(s.egoSpeed);
+      $("hu").textContent = s.isImperial ? "MPH" : "KM/H";
+      $("hud").classList.toggle("over", warnStage === 1); $("hud").classList.toggle("over2", warnStage === 2);
+      $("hTurnL").classList.toggle("on", s.leftBlinker === 2); $("hTurnR").classList.toggle("on", s.rightBlinker === 2);
+      $("hlim").textContent = s.fusedSpeedLimit > 0 ? "LIMIT " + Math.round(s.fusedSpeedLimit) : "";
+      $("hset").textContent = s.adasOn && s.accSetSpeed > 0 && !setBad ? "SET " + Math.round(s.accSetSpeed) : "";
+      $("hlight").innerHTML = tl ? '<i style="background:' + TL[tl] + '"></i>' + (s.stopLineDist > 0 ? (s.isImperial ? Math.round(s.stopLineDist * 3.281) + " FT" : Math.round(s.stopLineDist) + " M") : "") : "";
+      [["L", s.leftBlindSpot], ["R", s.rightBlindSpot]].forEach(function (b) {
+        var el = $("hbs" + b[0]); el.classList.toggle("on", showBs && b[1] > 0); el.classList.toggle("urgent", showBs && b[1] === 2);
+      });
+    }
     var c = Dash.charge(s);
     $("battWrap").hidden = c < 0 || !s.showCarBattery;
     $("bat").textContent = c; $("battFill").style.width = "calc(" + c + "% - 4px)";
