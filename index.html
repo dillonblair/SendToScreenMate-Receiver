@@ -190,12 +190,16 @@ body.lay-a, body.lay-b, body.lay-c, body.lay-d { --sx: 0px; }
   .col { gap: calc(var(--u) * 3); }
 }
 /* wide phone screens and the unfolded iPhone Duo have room for three columns, so nothing needs scrolling */
-@media (min-aspect-ratio: 4/3) {
+@media (min-aspect-ratio: 16/9) {
   .cols { grid-template-columns: 1fr 1fr 1fr; gap: calc(var(--u) * 4); }
   .cols > .col:first-child { grid-row: auto; }
   .sheet .card { width: min(96vw - 2 * var(--sx), calc(var(--u) * 196)); }
   .swatches { grid-template-columns: repeat(5, 1fr); }
 }
+:root.duo .cols { grid-template-columns: 1fr 1fr 1fr; gap: calc(var(--u) * 4); }
+:root.duo .cols > .col:first-child { grid-row: auto; }
+:root.duo .sheet .card { width: min(96vw - 2 * var(--sx), calc(var(--u) * 196)); }
+:root.duo .swatches { grid-template-columns: repeat(5, 1fr); }
 .col { display: grid; gap: calc(var(--u) * 4); align-content: start; }
 .field { display: grid; gap: calc(var(--u) * 1.8); }
 .field b { font-weight: 600; font-size: calc(var(--u) * 4.2); }
@@ -336,8 +340,11 @@ body.lay-a, body.lay-b, body.lay-c, body.lay-d { --sx: 0px; }
 .neon .switch[aria-checked="true"], .neon .sheet .done { background: #D93BBE; }
 .neon .seg button[aria-checked="true"] { color: #fff; background: #3A2547; }
 .neon .tabs button[aria-selected="true"] { background: #3A2547; }
-/* ---- the unfolded iPhone Duo (and other near-square screens, 10:7): use the extra height */
-@media (max-aspect-ratio: 16/10) { :root { --u: min(0.88vh, 0.6vw); } .sheet .card { --u: min(0.8vh, 0.54vw); } }
+/* ---- the unfolded iPhone Duo (10:7, nearly square): use the extra height. Only on the Duo
+   (class set by detectDuo()), as are the HUD button and its setting. */
+:root.duo { --u: min(0.88vh, 0.6vw); }
+:root.duo .sheet .card { --u: min(0.8vh, 0.54vw); }
+:root:not(.duo) .hudBtn, :root:not(.duo) .hudField, :root:not(.duo) .hud { display: none; }
 /* ---- HUD mode (the HUD button; double-tap to leave): lay the phone flat under the
    windshield. Pure black (black doesn't reflect), one big bright speed, flipped so the
    reflection reads the right way up. A dash app can only draw on the screen it's shown
@@ -514,7 +521,7 @@ body.lay-a, body.lay-b, body.lay-c, body.lay-d { --sx: 0px; }
           <small>Dims the glow and text. Hazards, turn signals and speed warnings stay full strength.</small>
         </div>
         <p class="hint">Now: <span id="briNow">100%</span></p>
-        <div class="field">
+        <div class="field hudField">
           <b id="hudLbl">HUD image</b>
           <div class="seg" role="radiogroup" aria-labelledby="hudLbl" data-key="hudFlip" data-def="flip">
             <button type="button" role="radio" data-v="flip" aria-label="Flip top to bottom">Flip ↕</button><button type="button" role="radio" data-v="mirror" aria-label="Mirror left to right">Mirror ↔</button><button type="button" role="radio" data-v="normal">Off</button>
@@ -735,6 +742,25 @@ body.lay-a, body.lay-b, body.lay-c, body.lay-d { --sx: 0px; }
     try { localStorage.setItem("halo", raw); } catch (e) {}
   }
   var settings = loadSettings();
+  // ---- iPhone Duo, unfolded. Web pages can't read the phone model, so go by the screen:
+  // 1878 x 2670 px at 3x is 626 x 890 points (spec figures; widen the margin if a real
+  // Duo reports slightly different). #duo in the URL turns it on for testing elsewhere.
+  var duo = false;
+  function detectDuo() {
+    if (location.hash.indexOf("duo") >= 0) return true;
+    var a = Math.min(screen.width, screen.height), b = Math.max(screen.width, screen.height);
+    var ios = /iPhone|iPad|iPod/.test(navigator.userAgent) || (!!window.webkit && !window.NativeCarState);
+    return ios && Math.abs(a - 626) <= 16 && Math.abs(b - 890) <= 24;
+  }
+  function applyDuo() {
+    duo = detectDuo(); document.documentElement.classList.toggle("duo", duo);
+    // folded (the app moves to the smaller cover screen) or not a Duo: leave HUD without forgetting it
+    if (!duo && window.HaloHudOff) HaloHudOff();
+  }
+  applyDuo();
+  // unfolding again brings HUD back if it was on
+  function duoChanged() { var was = duo; applyDuo(); if (duo && !was && settings.hud) setHud(true); }
+  window.addEventListener("resize", duoChanged); window.addEventListener("hashchange", duoChanged);
   window.HaloSave = function () { saveSettings(settings); };
   if (location.hash.indexOf("novis") >= 0) settings.laneView = false;
   function applyLaneView() {
@@ -831,7 +857,8 @@ body.lay-a, body.lay-b, body.lay-c, body.lay-d { --sx: 0px; }
     if (on) { $("hexit").style.opacity = 1; clearTimeout(hudHintT); hudHintT = setTimeout(function () { $("hexit").style.opacity = 0; }, 4000); }
     lastRing = "";
   }
-  $("hudBtn").addEventListener("click", function () { setHud(true); });
+  $("hudBtn").addEventListener("click", function () { if (duo) setHud(true); });
+  window.HaloHudOff = function () { $("hud").hidden = true; document.body.classList.remove("hudOn"); };
   $("hud").addEventListener("click", function () {
     var t = performance.now();
     if (t - hudTap < 400) { hudTap = 0; setHud(false); return; }
@@ -906,7 +933,7 @@ body.lay-a, body.lay-b, body.lay-c, body.lay-d { --sx: 0px; }
   var TL = ["", "#FF3B30", "#2FCB6A", "#FFB020"];
   var gearsEl = $("gears").children;
   applyTheme(); syncCarUi();
-  if (settings.hud) setHud(true);
+  if (settings.hud && duo) setHud(true);
 
   Dash.onFrame(function (s, dt, now) {
     if (day !== (!s.darkMode && !neon)) {
