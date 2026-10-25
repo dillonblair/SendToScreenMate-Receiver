@@ -690,14 +690,15 @@ body.lay-a, body.lay-b, body.lay-c, body.lay-d { --sx: 0px; }
   }
   applyLayout();
   window.addEventListener("hashchange", applyLayout);
-  // #neon in the URL previews the Neon theme without saving it
+  // #neon in the URL previews the Neon theme, until a theme is picked in settings
+  var themePreview = location.hash.indexOf("neon") >= 0;
   function applyTheme() {
-    neon = location.hash.indexOf("neon") >= 0 || settings.theme === "neon";
+    neon = themePreview || settings.theme === "neon";
     document.documentElement.classList.toggle("neon", neon);
     day = null;                  // re-read the theme's colours on the next frame
     applyLayout();
   }
-  window.addEventListener("hashchange", applyTheme);
+  window.addEventListener("hashchange", function () { themePreview = location.hash.indexOf("neon") >= 0; applyTheme(); });
   // demo page buttons switch modes through the hash
   window.addEventListener("hashchange", function () { settings.laneView = location.hash.indexOf("novis") < 0; applyLaneView(); });
   function host(androidMethod, iosHandler, value) {
@@ -773,6 +774,7 @@ body.lay-a, body.lay-b, body.lay-c, body.lay-d { --sx: 0px; }
   sw.innerHTML = '<button type="button" role="radio" class="auto" data-v="auto" aria-label="Auto">AUTO</button>' +
     HaloCar.PAINTS.map(function (p) { return '<button type="button" role="radio" data-v="' + p.id + '" aria-label="' + p.name + '" style="background-color:' + p.hex + '"></button>'; }).join("");
   function pick(group, key, v) {
+    if (key === "theme") themePreview = false;      // the driver's choice beats a #neon preview
     settings[key] = v; saveSettings(settings); applyTheme(); syncCarUi();
     if (window.HaloCarChanged) window.HaloCarChanged();
   }
@@ -782,7 +784,7 @@ body.lay-a, body.lay-b, body.lay-c, body.lay-d { --sx: 0px; }
   sw.addEventListener("click", function (e) { var b = e.target.closest("button"); if (b) pick(sw, "paint", b.dataset.v); });
   function syncCarUi() {
     [].forEach.call(document.querySelectorAll(".seg"), function (g) {
-      var cur = settings[g.dataset.key] || g.dataset.def || "auto";
+      var cur = g.dataset.key === "theme" ? (neon ? "neon" : "halo") : settings[g.dataset.key] || g.dataset.def || "auto";
       [].forEach.call(g.children, function (b) { b.setAttribute("aria-checked", b.dataset.v === cur ? "true" : "false"); });
     });
     var offs = Dash.state.isImperial === false ? WARN_KMH : WARN_MPH;
@@ -819,7 +821,7 @@ body.lay-a, body.lay-b, body.lay-c, body.lay-d { --sx: 0px; }
   var C = {}, day = null, ap = 0, pw = 0, steer = 0, roll = 0, bl = { l: 0, r: 0 }, signKey = "";
   var TL = ["", "#FF3B30", "#2FCB6A", "#FFB020"];
   var gearsEl = $("gears").children;
-  applyTheme();
+  applyTheme(); syncCarUi();
 
   Dash.onFrame(function (s, dt, now) {
     if (day !== (!s.darkMode && !neon)) {
