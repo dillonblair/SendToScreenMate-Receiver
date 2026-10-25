@@ -90,4 +90,6 @@ DashPilot's own Demo data source is always in Drive with Autopilot on, so the tr
 
 ## Publishing an update
 
+**Build number:** `HALO_VERSION` near the top of the main script in `index.html` (shown for 3.5 s at start and in the settings header). Raise it with every push and tell Dillon the number, so he can confirm the car has the latest build.
+
 Commit to `halo-dashboard` (entry files at the root) and push. The raw.githack URL picks it up after a few minutes. Keep the PR folder in sync with the same files.

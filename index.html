@@ -395,6 +395,16 @@ body.lay-a, body.lay-b, body.lay-c, body.lay-d { --sx: 0px; }
 .briPill .bar { position: relative; width: calc(var(--u) * 26); height: calc(var(--u) * 1.2); border-radius: 9px; background: var(--faint); overflow: hidden; }
 .briPill .bar i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 9px; background: var(--ink); }
 .briPill b { min-width: 3.2em; text-align: right; font-weight: 600; }
+/* iOS: an up-and-down drag would otherwise be taken as a page scroll, and the touch
+   cancelled before the brightness slide sees it. The settings card keeps its own scrolling. */
+html, body { touch-action: none; overscroll-behavior: none; }
+.sheet .card { touch-action: pan-y; }
+/* the build number, for a few seconds at start and in the settings header */
+.verToast { position: absolute; left: 50%; bottom: calc(var(--u) * 14); transform: translateX(-50%); z-index: 6; pointer-events: none;
+  padding: calc(var(--u) * 1.4) calc(var(--u) * 3.4); border-radius: 999px; background: rgba(10,11,13,.82); border: 1px solid var(--faint);
+  color: var(--dim); font-weight: 600; font-size: calc(var(--u) * 3); letter-spacing: .06em; transition: opacity .8s; }
+.verToast.gone { opacity: 0; }
+.sheet .ver { color: var(--dim); font-weight: 600; font-size: calc(var(--u) * 3); letter-spacing: .06em; margin-right: calc(var(--u) * 3); }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
 </head>
@@ -494,6 +504,7 @@ body.lay-a, body.lay-b, body.lay-c, body.lay-d { --sx: 0px; }
   <div class="hexit" id="hexit">Double-tap to leave HUD</div>
 </div>
 <div class="pressRing" id="pressRing" hidden></div>
+<div class="verToast" id="verToast"></div>
 <div class="briPill" id="briPill" aria-live="polite"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></svg><div class="bar"><i id="briBar"></i></div><b id="briPct">100%</b></div>
 <div class="trip" id="trip" hidden><div class="in"><div class="drive" id="tripBody"></div><div class="tap">Tap to close</div></div></div>
 <div class="saver" id="saver" hidden><div class="in" id="saverIn"><b id="saverClock"></b><div id="saverSub"></div></div></div>
@@ -503,7 +514,7 @@ body.lay-a, body.lay-b, body.lay-c, body.lay-d { --sx: 0px; }
       <div class="tabs" role="tablist" id="tabs">
         <button type="button" role="tab" data-tab="panelSet" aria-selected="true">Settings</button><button type="button" role="tab" data-tab="panelDrv" aria-selected="false">Drives</button><button type="button" role="tab" data-tab="panelBri" aria-selected="false">Display</button>
       </div>
-      <button type="button" class="done" id="sheetDone">Done</button>
+      <span class="ver" id="ver"></span><button type="button" class="done" id="sheetDone">Done</button>
     </div>
     <div class="drvcols" id="panelDrv" role="tabpanel" hidden>
       <div class="drive" id="drvBody"></div>
@@ -632,6 +643,10 @@ body.lay-a, body.lay-b, body.lay-c, body.lay-d { --sx: 0px; }
 <script>
 (function () {
   var $ = function (id) { return document.getElementById(id); };
+  // ---- build number: raise it with every change pushed, so the car shows which build it has
+  var HALO_VERSION = "1.0";
+  $("ver").textContent = "Halo v" + HALO_VERSION; $("verToast").textContent = "Halo v" + HALO_VERSION;
+  setTimeout(function () { $("verToast").classList.add("gone"); }, 3500);
   var cv = $("c"), ctx = cv.getContext("2d"), W, H, P = [], idx = {};
   // the ring is soft light, so it doesn't need the screen's full pixel density
   var dpr = Math.min(1.5, window.devicePixelRatio || 1);
@@ -888,8 +903,13 @@ body.lay-a, body.lay-b, body.lay-c, body.lay-d { --sx: 0px; }
   // a native gesture taking the touch cancels it; only a real drag ends the press
   document.addEventListener("pointercancel", function () { if (press) press.cancelled = true; });
   document.addEventListener("touchstart", function (e) { var t = e.touches[0]; if (t && !press) startPress(t.clientX, t.clientY); }, { passive: true });
-  document.addEventListener("touchmove", function (e) { var t = e.touches[0]; if (t) movePress(t.clientX, t.clientY); }, { passive: true });
+  // not passive: while a brightness slide is possible, stop the web view scrolling instead
+  document.addEventListener("touchmove", function (e) {
+    var t = e.touches[0]; if (t) movePress(t.clientX, t.clientY);
+    if (slide && e.cancelable) e.preventDefault();
+  }, { passive: false });
   document.addEventListener("touchend", endPress, { passive: true });
+  document.addEventListener("touchcancel", endPress, { passive: true });
   Dash.onFrame(checkPress);
   setInterval(checkPress, 100);          // also when frames are slow
   document.addEventListener("contextmenu", function (e) { e.preventDefault(); });
