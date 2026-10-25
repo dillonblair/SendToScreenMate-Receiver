@@ -385,6 +385,16 @@ body.lay-a, body.lay-b, body.lay-c, body.lay-d { --sx: 0px; }
   .hspd b { font-size: 34vw; } .hsub { font-size: 7vmin; column-gap: 5vmin; max-width: 92vw; }
 }
 .hexit { position: absolute; left: 0; right: 0; bottom: 4vmin; text-align: center; font-weight: 600; font-size: 3.4vmin; color: #6B7079; transition: opacity 1s; }
+/* ---- slide up / down on the dash to set Halo's brightness; the pill shows the level */
+.briPill { position: absolute; left: 50%; top: calc(var(--u) * 4); transform: translateX(-50%); z-index: 6; pointer-events: none;
+  display: flex; align-items: center; gap: calc(var(--u) * 2.4); padding: calc(var(--u) * 2) calc(var(--u) * 4);
+  background: rgba(10,11,13,.82); border: 1px solid var(--faint); border-radius: 999px; color: var(--ink);
+  font-weight: 600; font-size: calc(var(--u) * 3.6); opacity: 0; transition: opacity .4s; }
+.briPill.on { opacity: 1; transition: opacity .1s; }
+.briPill svg { width: calc(var(--u) * 4.4); height: calc(var(--u) * 4.4); }
+.briPill .bar { position: relative; width: calc(var(--u) * 26); height: calc(var(--u) * 1.2); border-radius: 9px; background: var(--faint); overflow: hidden; }
+.briPill .bar i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 9px; background: var(--ink); }
+.briPill b { min-width: 3.2em; text-align: right; font-weight: 600; }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
 </head>
@@ -484,6 +494,7 @@ body.lay-a, body.lay-b, body.lay-c, body.lay-d { --sx: 0px; }
   <div class="hexit" id="hexit">Double-tap to leave HUD</div>
 </div>
 <div class="pressRing" id="pressRing" hidden></div>
+<div class="briPill" id="briPill" aria-live="polite"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></svg><div class="bar"><i id="briBar"></i></div><b id="briPct">100%</b></div>
 <div class="trip" id="trip" hidden><div class="in"><div class="drive" id="tripBody"></div><div class="tap">Tap to close</div></div></div>
 <div class="saver" id="saver" hidden><div class="in" id="saverIn"><b id="saverClock"></b><div id="saverSub"></div></div></div>
 <div class="sheet" id="sheet" hidden>
@@ -831,16 +842,39 @@ body.lay-a, body.lay-b, body.lay-c, body.lay-d { --sx: 0px; }
     if (k <= 0) { r.hidden = true; return; }
     r.hidden = false; r.style.left = x + "px"; r.style.top = y + "px"; r.style.setProperty("--k", Math.min(1, k));
   }
+  // A clearly vertical slide on the dash sets Halo's brightness instead: up brighter,
+  // down dimmer, 20-100% in steps of 5, saved as a fixed level (Display tab: back to Auto).
+  // Sideways moves are left alone for DashPilot's own swipe between dashes.
+  var slide = null, SLIDE_START = 22, BRI_MIN = 20, pillT = 0;
   function startPress(x, y) {
     if (!$("sheet").hidden || !$("hud").hidden) return;
     press = { x: x, y: y, t: performance.now(), moved: false };
+    slide = window.HaloDrives && HaloDrives.saver ? null : { x: x, y: y, lvl: briLevel, on: false };
   }
   function movePress(x, y) {
     if (press && Math.hypot(x - press.x, y - press.y) > MOVE_TOLERANCE) { press = null; ringAt(0, 0, 0); }
+    if (!slide) return;
+    var dx = x - slide.x, dy = y - slide.y;
+    if (!slide.on) {
+      if (Math.abs(dy) < SLIDE_START) return;
+      if (Math.abs(dy) < Math.abs(dx) * 1.6) { slide = null; return; }   // a sideways swipe
+      slide.on = true; slide.y = y;                                        // start from here, no jump
+      dy = 0;
+    }
+    var lvl = Math.round((slide.lvl - dy / (innerHeight * 0.55) * 100) / 5) * 5;
+    setBright(Math.max(BRI_MIN, Math.min(100, lvl)));
+  }
+  function setBright(lvl) {
+    settings.bright = String(lvl); briT = -1;
+    briLevel = lvl; ringDim = lvl / 100; document.documentElement.style.setProperty("--bk", ringDim); lastRing = "";
+    $("briPct").textContent = lvl + "%"; $("briBar").style.width = lvl + "%";
+    $("briPill").classList.add("on"); clearTimeout(pillT);
   }
   function endPress() {
     if (press && performance.now() - press.t >= LONG_PRESS_MS) openSheet();
     press = null; ringAt(0, 0, 0);
+    if (slide && slide.on) { saveSettings(settings); pillT = setTimeout(function () { $("briPill").classList.remove("on"); }, 1200); }
+    slide = null;
   }
   function checkPress() {
     if (!press) return;
