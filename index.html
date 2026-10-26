@@ -421,6 +421,35 @@ html, body { touch-action: none; overscroll-behavior: none; }
 .arrBtn[disabled] { opacity: .45; cursor: default; }
 .swseg button { display: grid; place-items: center; }
 .swseg i { display: block; width: calc(var(--u) * 5); height: calc(var(--u) * 5); min-width: 18px; min-height: 18px; border-radius: 50%; }
+/* ---- first-run guide for the S2000 theme: an animated finger shows each gesture */
+.tour { position: fixed; inset: 0; z-index: 9; background: rgba(0,0,0,.55); }
+.tour .demo { position: absolute; left: 50%; top: 44%; width: 0; height: 0; }
+.tour .finger { position: absolute; width: calc(var(--u) * 11); height: calc(var(--u) * 11); margin: calc(var(--u) * -5.5) 0 0 calc(var(--u) * -5.5);
+  border-radius: 50%; background: radial-gradient(circle, rgba(255,255,255,.55), rgba(255,255,255,.12) 62%, transparent 64%);
+  border: 2px solid rgba(255,255,255,.9); box-shadow: 0 0 calc(var(--u) * 4) rgba(255,255,255,.45); }
+.tour .trail { position: absolute; height: 3px; border-radius: 3px; background: linear-gradient(90deg, transparent, rgba(255,255,255,.7)); }
+.tour[data-step="0"] .finger { animation: tourL 1.6s ease-in-out infinite; }
+.tour[data-step="0"] .trail { width: calc(var(--u) * 40); left: calc(var(--u) * -20); top: -1px; transform: scaleX(-1); }
+.tour[data-step="1"] .finger { animation: tourV 2.4s ease-in-out infinite; }
+.tour[data-step="1"] .trail { width: 3px; height: calc(var(--u) * 30); left: -1px; top: calc(var(--u) * -15); background: linear-gradient(transparent, rgba(255,255,255,.6), transparent); }
+.tour[data-step="2"] .finger { animation: tourH 1.6s ease-in-out infinite; }
+.tour[data-step="2"] .trail { display: none; }
+@keyframes tourL { 0% { transform: translateX(calc(var(--u) * 20)); opacity: 0; } 15% { opacity: 1; } 80% { opacity: 1; } 100% { transform: translateX(calc(var(--u) * -20)); opacity: 0; } }
+@keyframes tourV { 0%, 100% { transform: translateY(calc(var(--u) * 13)); } 50% { transform: translateY(calc(var(--u) * -13)); } }
+@keyframes tourH { 0%, 15% { transform: scale(1); box-shadow: 0 0 0 0 rgba(61,123,255,.0); } 55%, 85% { transform: scale(.88); box-shadow: 0 0 0 calc(var(--u) * 3) rgba(61,123,255,.7); } 100% { transform: scale(1); } }
+.tour .card { position: absolute; left: 50%; bottom: calc(var(--u) * 5); transform: translateX(-50%); width: min(86vw, calc(var(--u) * 120));
+  box-sizing: border-box; padding: calc(var(--u) * 4) calc(var(--u) * 5); border-radius: calc(var(--u) * 4); background: rgba(10,11,13,.94);
+  border: 1px solid #2A2D33; color: #F3F4F6; text-align: center; }
+.tour .card b { display: block; font-weight: 600; font-size: calc(var(--u) * 5); }
+.tour .card p { margin: calc(var(--u) * 1.6) 0 calc(var(--u) * 3); color: #A0A6AE; font-size: calc(var(--u) * 3.4); line-height: 1.4; }
+.tour .btns { display: flex; align-items: center; justify-content: space-between; gap: calc(var(--u) * 3); }
+.tour .btns button { font: 600 calc(var(--u) * 3.6) "Montserrat", system-ui, sans-serif; border: 0; border-radius: 999px; min-height: 40px;
+  padding: 0 calc(var(--u) * 6); cursor: pointer; color: #F3F4F6; background: transparent; }
+.tour .btns button.go { background: #3D7BFF; color: #fff; }
+.tour .dots { display: flex; gap: calc(var(--u) * 1.6); }
+.tour .dots i { width: 8px; height: 8px; border-radius: 50%; background: #2A2D33; }
+.tour .dots i.on { background: #F3F4F6; }
+@media (prefers-reduced-motion: reduce) { .tour .finger { animation: none !important; } }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
 </head>
@@ -522,6 +551,12 @@ html, body { touch-action: none; overscroll-behavior: none; }
   <div class="hexit" id="hexit">Double-tap to leave HUD</div>
 </div>
 <div class="pressRing" id="pressRing" hidden></div>
+<div class="tour" id="tour" hidden role="dialog" aria-modal="true" aria-labelledby="tourTitle">
+  <div class="demo"><i class="trail"></i><i class="finger"></i></div>
+  <div class="card"><b id="tourTitle"></b><p id="tourText"></p>
+    <div class="btns"><button type="button" id="tourSkip">Skip</button><span class="dots" id="tourDots"><i></i><i></i><i></i></span><button type="button" class="go" id="tourNext">Next</button></div>
+  </div>
+</div>
 <div class="arrBar" id="arrBar" hidden><span>Drag to move</span><button type="button" id="arrReset">Reset</button><button type="button" class="go" id="arrDone">Done</button></div>
 <div class="verToast" id="verToast"></div>
 <div class="briPill" id="briPill" aria-live="polite"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></svg><div class="bar"><i id="briBar"></i></div><b id="briPct">100%</b></div>
@@ -604,6 +639,7 @@ html, body { touch-action: none; overscroll-behavior: none; }
             <button type="button" role="radio" data-v="sport" aria-label="Sport: green to orange"><i style="background:linear-gradient(90deg,#3CF25A,#E8F23C,#FFA21E)"></i></button><button type="button" role="radio" data-v="white" aria-label="White"><i style="background:#F4F4F0"></i></button><button type="button" role="radio" data-v="yellow" aria-label="Yellow"><i style="background:#E8F23C"></i></button><button type="button" role="radio" data-v="red" aria-label="Red"><i style="background:#FF3A26"></i></button><button type="button" role="radio" data-v="purple" aria-label="Purple"><i style="background:#E650F2"></i></button><button type="button" role="radio" data-v="green" aria-label="Green"><i style="background:#3CF25A"></i></button>
           </div>
           <small id="s2kName">White</small>
+          <div><button type="button" class="arrBtn" id="tourAgain">Show tips</button></div>
         </div>
         <div class="field" id="layField">
           <b id="layLbl">Layout</b>
@@ -675,7 +711,7 @@ html, body { touch-action: none; overscroll-behavior: none; }
 (function () {
   var $ = function (id) { return document.getElementById(id); };
   // ---- build number: raise it with every change pushed, so the car shows which build it has
-  var HALO_VERSION = "1.6";
+  var HALO_VERSION = "1.7";
   $("ver").textContent = "Halo v" + HALO_VERSION; $("verToast").textContent = "Halo v" + HALO_VERSION;
   setTimeout(function () { $("verToast").classList.add("gone"); }, 3500);
   var cv = $("c"), ctx = cv.getContext("2d"), W, H, P = [], idx = {};
@@ -886,7 +922,45 @@ html, body { touch-action: none; overscroll-behavior: none; }
   function closeSheet() {
     if ($("sheet").hidden) return;
     $("sheet").hidden = true; host("setEditing", "editing", false);
+    maybeTour();
   }
+  // ---- first-run guide for the S2000 theme. Shown once (settings.tourS2k), the first time
+  // the theme is on screen with nothing else open; Display → S2000 colour → Show tips replays it.
+  // While the first step shows, the colour schemes cycle behind it to show what the swipe does.
+  var TOUR = [
+    ["Swipe left to change colours", "Swipe left across the dash for the next colour scheme, right to go back."],
+    ["Slide up or down for brightness", "Put a finger on the dash and slide up to brighten, down to dim."],
+    ["Press and hold for settings", "Hold a finger still on the dash for a moment to open settings."]];
+  var tourStep = -1, tourCycle = 0, tourSaved = null;
+  function maybeTour() {
+    if (s2k && !settings.tourS2k && !settings.hud && $("sheet").hidden && $("tour").hidden && !arranging) setTimeout(function () {
+      if (s2k && !settings.tourS2k && $("sheet").hidden && $("tour").hidden) showTour(0);
+    }, 900);
+  }
+  function showTour(i) {
+    clearInterval(tourCycle);
+    if (tourSaved !== null) { settings.s2kColor = tourSaved; tourSaved = null; }
+    if (i >= TOUR.length) { endTour(); return; }
+    tourStep = i; $("tour").hidden = false; $("tour").setAttribute("data-step", i);
+    $("tourTitle").textContent = TOUR[i][0]; $("tourText").textContent = TOUR[i][1];
+    $("tourNext").textContent = i === TOUR.length - 1 ? "Got it" : "Next";
+    [].forEach.call($("tourDots").children, function (d, k) { d.className = k === i ? "on" : ""; });
+    host("setEditing", "editing", true);
+    if (i === 0) {
+      tourSaved = settings.s2kColor || "";
+      var k = 0, order = ["sport", "white", "yellow", "red", "purple", "green"];
+      tourCycle = setInterval(function () { k = (k + 1) % order.length; settings.s2kColor = order[k]; }, 1600);
+    }
+  }
+  function endTour() {
+    clearInterval(tourCycle);
+    if (tourSaved !== null) { settings.s2kColor = tourSaved || undefined; tourSaved = null; }
+    $("tour").hidden = true; tourStep = -1; host("setEditing", "editing", false);
+    settings.tourS2k = true; saveSettings(settings);
+  }
+  $("tourNext").addEventListener("click", function () { showTour(tourStep + 1); });
+  $("tourSkip").addEventListener("click", endTour);
+  $("tourAgain").addEventListener("click", function () { closeSheet(); settings.tourS2k = false; setTimeout(function () { showTour(0); }, 300); });
   function ringAt(x, y, k) {
     var r = $("pressRing");
     if (k <= 0) { r.hidden = true; return; }
@@ -907,7 +981,7 @@ html, body { touch-action: none; overscroll-behavior: none; }
     schemeT = setTimeout(function () { vt.classList.add("gone"); }, 1400);
   }
   function startPress(x, y) {
-    if (!$("sheet").hidden || !$("hud").hidden || arranging) return;
+    if (!$("sheet").hidden || !$("hud").hidden || arranging || !$("tour").hidden) return;
     press = { x: x, y: y, t: performance.now(), moved: false };
     slide = window.HaloDrives && HaloDrives.saver ? null : { x: x, y: y, lvl: briLevel, on: false };
   }
@@ -1122,6 +1196,7 @@ html, body { touch-action: none; overscroll-behavior: none; }
   var TL = ["", "#FF3B30", "#2FCB6A", "#FFB020"];
   var gearsEl = $("gears").children;
   applyTheme(); syncCarUi(); applyMoves();
+  setTimeout(maybeTour, 2600);
   if (settings.hud && duo) setHud(true);
 
   Dash.onFrame(function (s, dt, now) {
