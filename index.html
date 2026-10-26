@@ -267,79 +267,69 @@ body.lay-a, body.lay-b, body.lay-c, body.lay-d { --sx: 0px; }
 .wrap { opacity: var(--bk, 1); }
 .tripOn .wrap { opacity: calc(var(--bk, 1) * .1); }
 #briNow { color: var(--ink); }
-/* ---- Neon theme (Display → Theme). Two arc gauges, speed on the left and power on the
-   right, glowing magenta over soft city lights. Always dark. The arc centres and radius
-   come from build() as --gL, --gR, --gy and --gr, so the text sits inside the arcs. */
-:root.neon, :root.neon.day {
-  --bg: #0A0710; --ink: #FBF4FF; --dim: #A592B4; --faint: #2B2135; --band: #1C1524;
-  --lane: #4E4258; --road: #140F1B; --other: #6A5E75; --glass: #1A1522;
-  --ap: #39D5FF; --regen: #39E58C; --over: #FFB020; --over2: #FF7A1A; --pink: #FF4FD8;
+/* ---- Matrix theme (Display → Theme). Two full-circle gauges, speed on the left and power
+   on the right, in the film's phosphor green over faint falling digital rain (#rain).
+   Always dark. The circle centres and radius come from build() as --gL, --gR, --gy and
+   --gr, so the text sits inside the circles. */
+:root.matrix, :root.matrix.day {
+  --bg: #010803; --ink: #D9FFE2; --dim: #4FAF6A; --faint: #10301A; --band: #06180C;
+  --lane: #2C6B3C; --road: #041208; --other: #3E7A4E; --glass: #06140A;
+  --ap: #39D5FF; --regen: #E6FFEC; --over: #FFB020; --over2: #FF7A1A; --mx: #00FF41;
 }
-.neon body { background: radial-gradient(ellipse 70% 38% at 50% 108%, rgba(150,30,150,.32), transparent 70%),
-  linear-gradient(#07050B, #0A0710 55%, #120A18); }
-.neon body:before { content: ""; position: fixed; inset: 0; pointer-events: none; opacity: var(--bk, 1); filter: saturate(1.2);
-  background:
-    radial-gradient(circle at 8% 14%, rgba(255,196,130,.16) 0, rgba(255,196,130,.08) 2.2%, transparent 3.4%),
-    radial-gradient(circle at 19% 30%, rgba(255,226,180,.12) 0, rgba(255,226,180,.05) 1.6%, transparent 2.6%),
-    radial-gradient(circle at 31% 9%, rgba(255,170,110,.12) 0, rgba(255,170,110,.05) 2.8%, transparent 4.2%),
-    radial-gradient(circle at 44% 24%, rgba(255,214,160,.09) 0, transparent 2.4%),
-    radial-gradient(circle at 57% 12%, rgba(255,140,200,.10) 0, rgba(255,140,200,.04) 2.6%, transparent 3.8%),
-    radial-gradient(circle at 68% 27%, rgba(255,205,150,.13) 0, rgba(255,205,150,.05) 1.8%, transparent 3%),
-    radial-gradient(circle at 81% 10%, rgba(255,185,120,.15) 0, rgba(255,185,120,.06) 2.4%, transparent 3.6%),
-    radial-gradient(circle at 93% 26%, rgba(255,230,190,.11) 0, rgba(255,230,190,.04) 1.8%, transparent 3%),
-    radial-gradient(circle at 25% 46%, rgba(200,120,255,.07) 0, transparent 3.2%),
-    radial-gradient(circle at 74% 44%, rgba(255,120,220,.07) 0, transparent 3.4%),
-    radial-gradient(ellipse 120% 40% at 50% 0%, rgba(120,70,40,.16), transparent 70%); }
-.neon .wrap { display: block; }
-.neon .side { display: contents; }
-.neon #spd { position: fixed; top: calc(var(--gy) - var(--u) * 13); left: calc(var(--gL) + var(--gr) * .06 - var(--u) * 26); width: calc(var(--u) * 52); }
-.neon .speed b { font-size: calc(var(--u) * 22); font-weight: 600; letter-spacing: -0.04em; line-height: .9;
-  text-shadow: 0 0 calc(var(--u) * 5) rgba(255,79,216,.28); }
-.neon .speed.d3 b { font-size: calc(var(--u) * 17.5); }
-.neon .speed .unit { margin-top: calc(var(--u) * 1); font-size: calc(var(--u) * 3.6); color: var(--ink); text-transform: lowercase; letter-spacing: .02em; }
-.neon .speed .power, .neon #kwWrap, .neon #setv { display: none; }
+.matrix body { background: radial-gradient(ellipse 80% 45% at 50% 105%, rgba(0,140,40,.16), transparent 70%), #010803; }
+#rain { display: none; position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.matrix #rain { display: block; opacity: calc(var(--bk, 1) * .55); }
+.hudOn #rain { display: none; }
+.matrix .wrap { display: block; }
+.matrix .side { display: contents; }
+.matrix #spd { position: fixed; top: calc(var(--gy) - var(--u) * 13); left: calc(var(--gL) + var(--gr) * .06 - var(--u) * 26); width: calc(var(--u) * 52); }
+.matrix .speed b { font-size: min(calc(var(--u) * 21), calc(var(--gr) * .62)); font-weight: 600; color: #E9FFEE; letter-spacing: -0.04em; line-height: .9;
+  text-shadow: 0 0 calc(var(--u) * 5) rgba(0,255,65,.3); }
+.matrix .speed.d3 b { font-size: min(calc(var(--u) * 17.5), calc(var(--gr) * .46)); }
+.matrix .speed .unit { margin-top: calc(var(--u) * 1); font-size: calc(var(--u) * 3.6); color: var(--ink); text-transform: lowercase; letter-spacing: .02em; }
+.matrix .speed .power, .matrix #kwWrap, .matrix #setv { display: none; }
 .nset, .nkw, .aplbl, .blbl { display: none; }
-.neon .nset { display: block; margin-top: calc(var(--u) * 1.6); font-weight: 700; font-size: calc(var(--u) * 3); letter-spacing: .1em; color: var(--dim); }
-.neon .nset b { display: inline; font-size: 1.2em; color: var(--ink); letter-spacing: 0; text-shadow: none; margin-left: .3em; }
-.neon .nkw { display: block; position: fixed; top: calc(var(--gy) - var(--u) * 9); left: calc(var(--gR) - var(--gr) * .06 - var(--u) * 20);
+.matrix .nset { display: block; margin-top: calc(var(--u) * 1.6); font-weight: 700; font-size: calc(var(--u) * 3); letter-spacing: .1em; color: var(--dim); }
+.matrix .nset b { display: inline; font-size: 1.2em; color: var(--ink); letter-spacing: 0; text-shadow: none; margin-left: .3em; }
+.matrix .nkw { display: block; position: fixed; top: calc(var(--gy) - var(--u) * 9); left: calc(var(--gR) - var(--gr) * .06 - var(--u) * 20);
   width: calc(var(--u) * 40); text-align: center; }
 .nkw b { display: block; font-weight: 600; font-size: calc(var(--u) * 12); line-height: 1; letter-spacing: -0.03em; }
 .nkw span { display: block; margin-top: calc(var(--u) * .8); font-weight: 600; font-size: calc(var(--u) * 3); color: var(--ink); }
 .nkw.regen b { color: var(--regen); }
-.neon .odo { left: calc(var(--gR) - var(--gr) * .06 - var(--u) * 20); width: calc(var(--u) * 40); text-align: center;
+.matrix .odo { left: calc(var(--gR) - var(--gr) * .06 - var(--u) * 20); width: calc(var(--u) * 40); text-align: center;
   top: calc(var(--gy) + var(--u) * 9); bottom: auto; font-size: calc(var(--u) * 2.8); }
-.neon .turn { position: fixed; top: calc(var(--u) * 3.6); width: calc(var(--u) * 5.4); height: calc(var(--u) * 5.4); }
-.neon .turn.l { left: calc(50% - var(--u) * 24); } .neon .turn.r { left: calc(50% + var(--u) * 18.6); right: auto; }
-.neon .top { top: calc(var(--u) * 4); left: 0; right: 0; justify-content: center; font-size: calc(var(--u) * 3.2); }
-.neon .top .right { flex-direction: row-reverse; gap: calc(var(--u) * 3); }
-.neon #clk { color: var(--ink); opacity: .8; }
-.neon #sign { position: fixed; top: calc(var(--u) * 10.5); left: 50%; transform: translateX(-50%) scale(.62); transform-origin: top center; }
-.neon .eu { box-shadow: 0 0 calc(var(--u) * 4) rgba(226,27,27,.45); }
-.neon .light { position: fixed; top: calc(var(--u) * 14); left: calc(50% + var(--u) * 10); font-size: calc(var(--u) * 3.4); }
-.neon .viz { position: fixed; top: calc(var(--u) * 21); margin: 0;
-  left: calc(var(--gL) + var(--gr) * .64); width: calc(100vw - 2 * (var(--gL) + var(--gr) * .64)); }
-.neon .viz #gl, .neon .viz svg { height: calc(var(--u) * 46); }
-.neon .ap { position: fixed; bottom: calc(var(--u) * 24); left: 50%; transform: translateX(-50%); gap: calc(var(--u) * 1.2); }
-.neon .ap svg { width: calc(var(--u) * 3.6); height: calc(var(--u) * 3.6); }
-.neon .aplbl { display: inline; font-weight: 700; font-size: calc(var(--u) * 3); letter-spacing: .1em; }
-.neon .ap.on { text-shadow: 0 0 calc(var(--u) * 2) rgba(57,213,255,.6); }
-.neon .batt { position: fixed; bottom: calc(var(--u) * 15); left: 50%; transform: translateX(-50%); gap: calc(var(--u) * 2.2); color: var(--ink); }
-.neon .blbl { display: inline; font-size: calc(var(--u) * 2.6); letter-spacing: .14em; color: var(--dim); }
-.neon .batt .cell { width: calc(var(--u) * 22); height: calc(var(--u) * 2.4); border: 1px solid rgba(255,79,216,.5); border-radius: 2px; transform: skewX(-24deg); }
-.neon .batt .cell:after { display: none; }
-.neon .batt .cell i { left: 1px; top: 1px; bottom: 1px; border-radius: 1px; background: linear-gradient(90deg, #8E2BC4, #FF4FD8 70%, #FFB8EF);
-  box-shadow: 0 0 calc(var(--u) * 1.6) rgba(255,79,216,.6); }
-.neon .gears { position: fixed; bottom: calc(var(--u) * 5.5); left: 50%; transform: translateX(-50%); display: flex; align-items: center;
+.matrix .turn { position: fixed; top: calc(var(--u) * 3.6); width: calc(var(--u) * 5.4); height: calc(var(--u) * 5.4); }
+.matrix .turn.l { left: calc(50% - var(--u) * 24); } .matrix .turn.r { left: calc(50% + var(--u) * 18.6); right: auto; }
+.matrix .top { top: calc(var(--u) * 4); left: 0; right: 0; justify-content: center; font-size: calc(var(--u) * 3.2); }
+.matrix .top .right { flex-direction: row-reverse; gap: calc(var(--u) * 3); }
+.matrix #clk { color: var(--ink); opacity: .8; }
+.matrix #sign { position: fixed; top: calc(var(--u) * 10.5); left: 50%; transform: translateX(-50%) scale(.62); transform-origin: top center; }
+.matrix .eu { box-shadow: 0 0 calc(var(--u) * 4) rgba(226,27,27,.45); }
+.matrix .light { position: fixed; top: calc(var(--u) * 14); left: calc(50% + var(--u) * 10); font-size: calc(var(--u) * 3.4); }
+.matrix .viz { position: fixed; top: calc(var(--u) * 21); margin: 0;
+  left: calc(var(--gL) + var(--gr) * 1.1); width: calc(100vw - 2 * (var(--gL) + var(--gr) * 1.1)); }
+.matrix .viz #gl, .matrix .viz svg { height: calc(var(--u) * 46); }
+.matrix .ap { position: fixed; bottom: calc(var(--u) * 24); left: 50%; transform: translateX(-50%); gap: calc(var(--u) * 1.2); }
+.matrix .ap svg { width: calc(var(--u) * 3.6); height: calc(var(--u) * 3.6); }
+.matrix .aplbl { display: inline; font-weight: 700; font-size: calc(var(--u) * 3); letter-spacing: .1em; }
+.matrix .ap.on { text-shadow: 0 0 calc(var(--u) * 2) rgba(57,213,255,.6); }
+.matrix .batt { position: fixed; bottom: calc(var(--u) * 15); left: 50%; transform: translateX(-50%); gap: calc(var(--u) * 2.2); color: var(--ink); }
+.matrix .blbl { display: inline; font-size: calc(var(--u) * 2.6); letter-spacing: .14em; color: var(--dim); }
+.matrix .batt .cell { width: calc(var(--u) * 14); height: calc(var(--u) * 2.4); border: 1px solid rgba(0,255,65,.5); border-radius: 2px; transform: skewX(-24deg); }
+.matrix .batt .cell:after { display: none; }
+.matrix .batt .cell i { left: 1px; top: 1px; bottom: 1px; border-radius: 1px; background: linear-gradient(90deg, #00591A, #00FF41 70%, #C8FFD6);
+  box-shadow: 0 0 calc(var(--u) * 1.6) rgba(0,255,65,.55); }
+.matrix .gears { position: fixed; bottom: calc(var(--u) * 5.5); left: 50%; transform: translateX(-50%); display: flex; align-items: center;
   gap: calc(var(--u) * 3.4); font-size: calc(var(--u) * 3.4); color: var(--dim); }
-.neon .gears span { display: grid; place-items: center; width: calc(var(--u) * 5.6); height: calc(var(--u) * 5.6); border-radius: 50%; }
-.neon .gears .on { color: #fff; background: radial-gradient(circle at 40% 35%, #FF9BEA, #FF4FD8 60%, #C02AA8);
-  box-shadow: 0 0 calc(var(--u) * 2.6) rgba(255,79,216,.75); text-shadow: none; }
-.neon .tells { bottom: calc(var(--u) * 1.2); font-size: calc(var(--u) * 2.8); }
-.neon.novis .wrap .viz { display: none; }
-.neon.novis .speed b { font-size: calc(var(--u) * 22); }
-.neon .switch[aria-checked="true"], .neon .sheet .done { background: #D93BBE; }
-.neon .seg button[aria-checked="true"] { color: #fff; background: #3A2547; }
-.neon .tabs button[aria-selected="true"] { background: #3A2547; }
+.matrix .gears span { display: grid; place-items: center; width: calc(var(--u) * 5.6); height: calc(var(--u) * 5.6); border-radius: 50%; }
+.matrix .gears .on { color: #012008; background: radial-gradient(circle at 40% 35%, #C8FFD6, #00FF41 60%, #00A82B);
+  box-shadow: 0 0 calc(var(--u) * 2.6) rgba(0,255,65,.7); text-shadow: none; }
+.matrix .tells { bottom: calc(var(--u) * 1.2); font-size: calc(var(--u) * 2.8); }
+.matrix.novis .wrap .viz { display: none; }
+
+.matrix .switch[aria-checked="true"], .matrix .sheet .done { background: #00B82F; color: #012008; }
+.matrix .seg button[aria-checked="true"] { color: #D9FFE2; background: #154A24; }
+.matrix .tabs button[aria-selected="true"] { background: #154A24; }
 /* ---- the unfolded iPhone Duo (10:7, nearly square): use the extra height. Only on the Duo
    (class set by detectDuo()), as are the HUD button and its setting. */
 :root.duo { --u: min(0.88vh, 0.6vw); }
@@ -355,7 +345,7 @@ body.lay-a, body.lay-b, body.lay-c, body.lay-d { --sx: 0px; }
   min-height: 36px; min-width: 64px; cursor: pointer; opacity: var(--bk, 1); }
 .hudBtn:focus-visible { outline: 2px solid var(--ap); outline-offset: 2px; }
 .saved .hudBtn, .hudOn .hudBtn { display: none; }
-.neon .hudBtn { right: calc(var(--u) * 4 + var(--sx)); bottom: calc(var(--u) * 3); }
+.matrix .hudBtn { right: calc(var(--u) * 4 + var(--sx)); bottom: calc(var(--u) * 3); }
 .hudOn .wrap, .hudOn #c, .hudOn .top, .hudOn .odo, .hudOn .nkw { display: none; }
 .hud { position: fixed; inset: 0; z-index: 7; background: #000; color: #F2FFF9; overflow: hidden; }
 .hud .hin { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: 2vmin; }
@@ -416,6 +406,7 @@ html, body { touch-action: none; overscroll-behavior: none; }
 </style>
 </head>
 <body>
+<canvas id="rain" aria-hidden="true"></canvas>
 <canvas id="c"></canvas>
 <canvas id="s2k" aria-label="S2000-style cluster"></canvas>
 <div class="top">
@@ -578,9 +569,9 @@ html, body { touch-action: none; overscroll-behavior: none; }
         <div class="field">
           <b id="themeLbl">Theme</b>
           <div class="seg" role="radiogroup" aria-labelledby="themeLbl" data-key="theme" data-def="halo">
-            <button type="button" role="radio" data-v="halo">Halo</button><button type="button" role="radio" data-v="neon">Neon</button><button type="button" role="radio" data-v="s2000">S2000</button>
+            <button type="button" role="radio" data-v="halo">Halo</button><button type="button" role="radio" data-v="matrix">Matrix</button><button type="button" role="radio" data-v="s2000">S2000</button>
           </div>
-          <small>Neon: glowing arc gauges. S2000: a digital cluster after Honda's. Both always dark.</small>
+          <small>Matrix: green ring gauges over digital rain. S2000: a digital cluster after Honda's. Both always dark.</small>
         </div>
         <div class="field">
           <b id="layLbl">Layout</b>
@@ -652,7 +643,7 @@ html, body { touch-action: none; overscroll-behavior: none; }
 (function () {
   var $ = function (id) { return document.getElementById(id); };
   // ---- build number: raise it with every change pushed, so the car shows which build it has
-  var HALO_VERSION = "1.2";
+  var HALO_VERSION = "1.3";
   $("ver").textContent = "Halo v" + HALO_VERSION; $("verToast").textContent = "Halo v" + HALO_VERSION;
   setTimeout(function () { $("verToast").classList.add("gone"); }, 3500);
   var cv = $("c"), ctx = cv.getContext("2d"), W, H, P = [], idx = {};
@@ -672,12 +663,12 @@ html, body { touch-action: none; overscroll-behavior: none; }
     }
     return sx;
   }
-  var neon = false, s2k = false, G = null;   // Neon theme: arc gauge geometry, in canvas pixels
+  var matrix = false, s2k = false, G = null;   // Matrix theme: arc gauge geometry, in canvas pixels
   function build() {
     W = cv.width = innerWidth * dpr; H = cv.height = innerHeight * dpr;
     var sx = sideInset() * dpr;
     window.HaloSx = sx / dpr;
-    if (neon) { buildNeon(sx); return; }
+    if (matrix) { buildMatrix(sx); return; }
     var m = Math.min(H, W / 2.1) * 0.03, r = Math.min(H, W) * 0.08, x0 = m + sx, y0 = m, x1 = W - m - sx, y1 = H - m;
     P = []; idx = {};
     function line(ax, ay, bx, by) { var n = Math.ceil(Math.hypot(bx - ax, by - ay) / 6); for (var i = 0; i < n; i++) P.push([ax + (bx - ax) * i / n, ay + (by - ay) * i / n]); }
@@ -689,23 +680,21 @@ html, body { touch-action: none; overscroll-behavior: none; }
     line(x0, y1 - r, x0, H / 2); idx.LM = P.length; line(x0, H / 2, x0, y0 + r); arc(x0 + r, y0 + r, Math.PI);
     line(x0 + r, y0, W / 2, y0); idx.N = P.length;
   }
-  // Neon: two arcs, open toward the middle. The left one (speed) runs from its bottom
-  // end round the outside to its top; the right one (power) mirrors it. The signal path
-  // P runs clockwise from top centre along the outside of both arcs, with a gap (null)
-  // between them at the top and bottom, so every ring signal lands on the arcs.
-  function buildNeon(sx) {
-    var lab = Math.min(H, W) * 0.06, r = Math.min(H * 0.44, (W - 2 * sx) * 0.2), cy = H * 0.52;
-    var cl = sx + Math.min(H, W) * 0.03 + lab + r, cr = W - cl, SPAN = 210 * Math.PI / 180;
-    G = { r: r, cy: cy, cl: cl, cr: cr, span: SPAN,
-      L0: 75 * Math.PI / 180,                     // left arc: value 0 at the bottom end, rising clockwise
-      R0: 105 * Math.PI / 180 };                   // right arc: value 0 at the bottom end, rising anticlockwise
-    var ro = r + Math.max(4, r * 0.035), n = Math.ceil(SPAN * ro / 6), i, a;
+  // Matrix: two full circles, speed on the left and power on the right. The signal path P
+  // runs clockwise from top centre down the outer half of the right circle, then up the
+  // outer half of the left one, with a gap (null) between them at the top and bottom, so
+  // every ring signal (assist, turn sweeps, blind spots, light, warning) lands on the
+  // circles' outer edges.
+  function buildMatrix(sx) {
+    var lab = Math.min(H, W) * 0.065, r = Math.min(H * 0.36, (W - 2 * sx) * 0.15), cy = H * 0.5;
+    var cl = sx + Math.min(H, W) * 0.03 + lab + r, cr = W - cl;
+    G = { r: r, cy: cy, cl: cl, cr: cr };
+    var ro = r + Math.max(4, r * 0.035), n = Math.ceil(Math.PI * ro / 6), i, a;
     P = [null]; idx = {};
-    // both arcs are symmetric about their outermost point, so the side middles are halfway
-    for (i = 0; i <= n; i++) { a = G.R0 - SPAN + SPAN * i / n; P.push([cr + Math.cos(a) * ro, cy + Math.sin(a) * ro]); }
+    for (i = 0; i <= n; i++) { a = -Math.PI / 2 + Math.PI * i / n; P.push([cr + Math.cos(a) * ro, cy + Math.sin(a) * ro]); }
     idx.RM = 1 + Math.round(n / 2);
     idx.BC = P.length; P.push(null);
-    for (i = 0; i <= n; i++) { a = G.L0 + SPAN * i / n; P.push([cl + Math.cos(a) * ro, cy + Math.sin(a) * ro]); }
+    for (i = 0; i <= n; i++) { a = Math.PI / 2 + Math.PI * i / n; P.push([cl + Math.cos(a) * ro, cy + Math.sin(a) * ro]); }
     idx.LM = idx.BC + 1 + Math.round(n / 2);
     idx.N = P.length;
     var st = document.documentElement.style;
@@ -780,6 +769,7 @@ html, body { touch-action: none; overscroll-behavior: none; }
     try { localStorage.setItem("halo", raw); } catch (e) {}
   }
   var settings = loadSettings();
+  if (settings.theme === "neon") settings.theme = "matrix";     // the theme's old name
   // ---- iPhone Duo, unfolded. Web pages can't read the phone model, so go by the screen:
   // 1878 x 2670 px at 3x is 626 x 890 points (spec figures; widen the margin if a real
   // Duo reports slightly different). #duo in the URL turns it on for testing elsewhere.
@@ -824,19 +814,19 @@ html, body { touch-action: none; overscroll-behavior: none; }
   // #lay-a ... #lay-d in the URL previews a layout without saving it
   function applyLayout() {
     var m = location.hash.match(/lay-(classic|[a-d])/), v = m ? m[1] : settings.layout || "classic";
-    if (neon || s2k) v = "classic";      // Neon and S2000 have their own arrangement
+    if (matrix || s2k) v = "classic";      // Matrix and S2000 have their own arrangement
     ["a", "b", "c", "d"].forEach(function (k) { document.body.classList.toggle("lay-" + k, v === k); });
     build(); lastRing = "";      // the ring's notch margin depends on the layout
   }
   applyLayout();
   window.addEventListener("hashchange", applyLayout);
-  // #neon or #s2000 in the URL previews that theme, until a theme is picked in settings
-  function hashTheme() { return location.hash.indexOf("neon") >= 0 ? "neon" : location.hash.indexOf("s2000") >= 0 ? "s2000" : ""; }
+  // #matrix or #s2000 in the URL previews that theme, until a theme is picked in settings
+  function hashTheme() { return location.hash.indexOf("matrix") >= 0 ? "matrix" : location.hash.indexOf("s2000") >= 0 ? "s2000" : ""; }
   var themePreview = hashTheme();
   function applyTheme() {
     var th = themePreview || settings.theme || "halo";
-    neon = th === "neon"; s2k = th === "s2000";
-    document.documentElement.classList.toggle("neon", neon);
+    matrix = th === "matrix"; s2k = th === "s2000";
+    document.documentElement.classList.toggle("matrix", matrix);
     document.documentElement.classList.toggle("s2000", s2k);
     day = null;                  // re-read the theme's colours on the next frame
     applyLayout();
@@ -962,7 +952,7 @@ html, body { touch-action: none; overscroll-behavior: none; }
   sw.innerHTML = '<button type="button" role="radio" class="auto" data-v="auto" aria-label="Auto">AUTO</button>' +
     HaloCar.PAINTS.map(function (p) { return '<button type="button" role="radio" data-v="' + p.id + '" aria-label="' + p.name + '" style="background-color:' + p.hex + '"></button>'; }).join("");
   function pick(group, key, v) {
-    if (key === "theme") themePreview = "";         // the driver's choice beats a #neon / #s2000 preview
+    if (key === "theme") themePreview = "";         // the driver's choice beats a #matrix / #s2000 preview
     if (key === "laneMode") delete settings.laneView;
     settings[key] = v; saveSettings(settings); applyTheme(); applyLaneView(); syncCarUi();
     hudImage();
@@ -974,15 +964,15 @@ html, body { touch-action: none; overscroll-behavior: none; }
   sw.addEventListener("click", function (e) { var b = e.target.closest("button"); if (b) pick(sw, "paint", b.dataset.v); });
   function syncCarUi() {
     [].forEach.call(document.querySelectorAll(".seg"), function (g) {
-      var cur = g.dataset.key === "theme" ? (neon ? "neon" : s2k ? "s2000" : "halo") : g.dataset.key === "laneMode" ? laneMode()
+      var cur = g.dataset.key === "theme" ? (matrix ? "matrix" : s2k ? "s2000" : "halo") : g.dataset.key === "laneMode" ? laneMode()
         : settings[g.dataset.key] || g.dataset.def || "auto";
       [].forEach.call(g.children, function (b) { b.setAttribute("aria-checked", b.dataset.v === cur ? "true" : "false"); });
     });
     var offs = Dash.state.isImperial === false ? WARN_KMH : WARN_MPH;
     [].forEach.call($("overSeg").children, function (b, i) { b.textContent = "+" + offs[i]; });
     $("overSeg").setAttribute("aria-disabled", settings.warn === "off" ? "true" : "false");
-    $("laySeg").setAttribute("aria-disabled", neon || s2k ? "true" : "false");
-    $("layNote").textContent = neon || s2k ? "This theme has its own layout. These apply to the Halo theme."
+    $("laySeg").setAttribute("aria-disabled", matrix || s2k ? "true" : "false");
+    $("layNote").textContent = matrix || s2k ? "This theme has its own layout. These apply to the Halo theme."
       : "Where the gears, speed-limit sign and Autopilot sit. All but Classic keep them clear of an iPhone notch.";
     var fixed = (settings.bright || "auto") !== "auto";
     $("nightSeg").setAttribute("aria-disabled", fixed ? "true" : "false");
@@ -1016,8 +1006,8 @@ html, body { touch-action: none; overscroll-behavior: none; }
   if (settings.hud && duo) setHud(true);
 
   Dash.onFrame(function (s, dt, now) {
-    if (day !== (!s.darkMode && !neon && !s2k)) {
-      day = !s.darkMode && !neon && !s2k; document.documentElement.classList.toggle("day", day);
+    if (day !== (!s.darkMode && !matrix && !s2k)) {
+      day = !s.darkMode && !matrix && !s2k; document.documentElement.classList.toggle("day", day);
       ["--band", "--ap"].forEach(function (k) { C[k] = css(k); });
     }
     var hq = s.renderQuality !== 1;
@@ -1043,7 +1033,7 @@ html, body { touch-action: none; overscroll-behavior: none; }
     // ---- halo (redrawn only while something on it moves or changes)
     var ringKey = [s.adasOn, s.leftBlinker, s.rightBlinker, s.leftBlindSpot, s.rightBlindSpot, lightAhead(s),
       Math.round(s.stopLineDist), warnStage, settings.warn, Math.round(warnBy), day, W, H, saving, briLevel,
-      neon ? [Math.round(s.egoSpeed * 4), Math.round(pw * 2), s.maxDischargePower, s.isImperial].join("/") : ""].join();
+      matrix ? [Math.round(s.egoSpeed * 4), Math.round(pw * 2), s.maxDischargePower, s.isImperial].join("/") : ""].join();
     var ringMoving = (ap > 0.005 && ap < 0.995) || bl.l || bl.r ||
       s.leftBlindSpot === 2 || s.rightBlindSpot === 2 || drainT || nudgeT || (saving && !reduceMotion);
     if (ringMoving || ringKey !== lastRing) { lastRing = ringKey; drawRing(); }
@@ -1098,87 +1088,113 @@ html, body { touch-action: none; overscroll-behavior: none; }
     // for the S2000 theme: the warning stage, and the speed where its bars turn red
     window.HaloWarn = { stage: warnStage, at: mode !== "off" && s.fusedSpeedLimit > 0 ? s.fusedSpeedLimit + off : 0 };
   }
-  // ---- Neon gauges: speed on the left arc, power on the right
-  var PAL = { pink: ["#5E1488", "#D63CC0", "#FFA6EC"], amber: ["#7A3300", "#FFB020", "#FFE2A6"],
-    orange: ["#6E1C00", "#FF7A1A", "#FFC69A"], green: ["#0B5A31", "#39E58C", "#C4FFDF"] };
+  // ---- Matrix gauges: two full rings. Angles are canvas radians (0 = 3 o'clock, clockwise);
+  // both start at 12 o'clock. Speed fills clockwise round the whole ring; power fills
+  // clockwise over three quarters, regen anticlockwise over the last quarter.
+  var PAL = { mx: ["#013A10", "#00FF41", "#C8FFD6"], amber: ["#4A2400", "#FFB020", "#FFE2A6"],
+    orange: ["#461400", "#FF7A1A", "#FFC69A"], regen: ["#1E3A26", "#B9FFCB", "#FFFFFF"] };
+  var TOP = -Math.PI / 2, TAU = Math.PI * 2;
   function lerpHex(a, b, k) { var x = hex(a), y = hex(b); return "rgb(" + x.map(function (v, i) { return Math.round(v + (y[i] - v) * k); }).join(",") + ")"; }
   function palAt(p, k) { return k < 0.6 ? lerpHex(p[0], p[1], k / 0.6) : lerpHex(p[1], p[2], (k - 0.6) / 0.4); }
-  // side -1 is the left arc (rises clockwise), +1 the right (rises anticlockwise)
-  function angAt(side, f) { return side < 0 ? G.L0 + f * G.span : G.R0 - f * G.span; }
-  function arcPath(side, rad, f0, f1) {
-    ctx.beginPath(); ctx.arc(side < 0 ? G.cl : G.cr, G.cy, rad, angAt(side, f0), angAt(side, f1), side > 0);
-  }
-  function gauge(side, ticks, fills, hq) {
-    var r = G.r, bw = r * 0.19, rb = r - r * 0.075 - bw / 2, cx = side < 0 ? G.cl : G.cr, pink = "#FF4FD8";
+  function ringPath(cx, rad, a0, a1) { ctx.beginPath(); ctx.arc(cx, G.cy, rad, a0, a1, a1 < a0); }
+  // ticks: [angle, label or null]; fills: [from angle, to angle, palette], bright at the "to" end
+  function gauge(cx, ticks, fills, hq) {
+    var r = G.r, bw = r * 0.17, rb = r - r * 0.075 - bw / 2, mx = "#00FF41";
     ctx.lineCap = "butt";
-    // the glowing outline
-    if (hq) [[9, 0.05], [5, 0.1]].forEach(function (l) { arcPath(side, r, 0, 1); ctx.strokeStyle = pink; ctx.globalAlpha = l[1] * ringDim; ctx.lineWidth = l[0] * dpr; ctx.stroke(); });
-    arcPath(side, r, 0, 1); ctx.strokeStyle = pink; ctx.globalAlpha = 0.9 * ringDim; ctx.lineWidth = 2 * dpr; ctx.stroke();
-    arcPath(side, r, 0, 1); ctx.strokeStyle = "#FFD3F5"; ctx.globalAlpha = 0.7 * ringDim; ctx.lineWidth = 0.8 * dpr; ctx.stroke();
-    // the empty track
-    arcPath(side, rb, 0, 1); ctx.strokeStyle = pink; ctx.globalAlpha = 0.06 * ringDim; ctx.lineWidth = bw; ctx.stroke();
+    // the glowing outline, a whole circle
+    if (hq) [[9, 0.05], [5, 0.1]].forEach(function (l) { ringPath(cx, r, 0, TAU); ctx.strokeStyle = mx; ctx.globalAlpha = l[1] * ringDim; ctx.lineWidth = l[0] * dpr; ctx.stroke(); });
+    ringPath(cx, r, 0, TAU); ctx.strokeStyle = mx; ctx.globalAlpha = 0.9 * ringDim; ctx.lineWidth = 2 * dpr; ctx.stroke();
+    ringPath(cx, r, 0, TAU); ctx.strokeStyle = "#C8FFD6"; ctx.globalAlpha = 0.55 * ringDim; ctx.lineWidth = 0.8 * dpr; ctx.stroke();
+    // the empty track, and a thin inner ring
+    ringPath(cx, rb, 0, TAU); ctx.strokeStyle = mx; ctx.globalAlpha = 0.07 * ringDim; ctx.lineWidth = bw; ctx.stroke();
+    ringPath(cx, rb - bw / 2 - r * 0.03, 0, TAU); ctx.strokeStyle = mx; ctx.globalAlpha = 0.25 * ringDim; ctx.lineWidth = 1 * dpr; ctx.stroke();
     // ticks and numbers outside the outline
-    ctx.font = "600 " + Math.round(r * 0.072) + "px Montserrat, system-ui, sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.font = "600 " + Math.round(r * 0.078) + "px Montserrat, system-ui, sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
     ticks.forEach(function (t) {
-      var a = angAt(side, t[0]), c = Math.cos(a), sn = Math.sin(a), len = t[1] != null ? r * 0.06 : r * 0.03;
+      var c = Math.cos(t[0]), sn = Math.sin(t[0]), len = t[1] != null ? r * 0.06 : r * 0.03;
       ctx.beginPath(); ctx.moveTo(cx + c * r, G.cy + sn * r); ctx.lineTo(cx + c * (r - len), G.cy + sn * (r - len));
-      ctx.strokeStyle = pink; ctx.globalAlpha = (t[1] != null ? 0.9 : 0.45) * ringDim; ctx.lineWidth = 1.5 * dpr; ctx.stroke();
-      if (t[1] == null) return;
-      var lr = r + r * 0.11;
-      ctx.fillStyle = "#F3E6FA"; ctx.globalAlpha = 0.72 * ringDim; ctx.fillText(t[1], cx + c * lr, G.cy + sn * lr);
+      ctx.strokeStyle = mx; ctx.globalAlpha = (t[1] != null ? 0.9 : 0.45) * ringDim; ctx.lineWidth = 1.5 * dpr; ctx.stroke();
+      if (!t[1]) return;
+      var lr = r + r * 0.12;
+      ctx.fillStyle = "#C8FFD6"; ctx.globalAlpha = 0.75 * ringDim; ctx.fillText(t[1], cx + c * lr, G.cy + sn * lr);
     });
-    // the value: a thick band, dark at its start and bright at its leading edge
+    // the value: a thick band, dark where it starts and bright at its leading edge
     fills.forEach(function (fl) {
-      var f0 = fl[0], f1 = fl[1], p = fl[2], lead = fl[3];
-      if (f1 - f0 < 0.002) return;
-      if (hq) [[1.9, 0.08], [1.35, 0.12]].forEach(function (l) { arcPath(side, rb, f0, f1); ctx.strokeStyle = p[1]; ctx.globalAlpha = l[1] * ringDim; ctx.lineWidth = bw * l[0]; ctx.stroke(); });
+      var a0 = fl[0], a1 = fl[1], p = fl[2];
+      if (Math.abs(a1 - a0) < 0.01) return;
+      if (hq) [[1.9, 0.08], [1.35, 0.12]].forEach(function (l) { ringPath(cx, rb, a0, a1); ctx.strokeStyle = p[1]; ctx.globalAlpha = l[1] * ringDim; ctx.lineWidth = bw * l[0]; ctx.stroke(); });
       ctx.globalAlpha = ringDim; ctx.lineWidth = bw;
+      var lo = Math.min(a0, a1), sp = Math.abs(a1 - a0) / TAU, up = a1 > a0;
       if (ctx.createConicGradient) {
-        // one smooth sweep: the conic runs clockwise, so start it at whichever end is clockwise-first
-        var lo = side < 0 ? f0 : f1, g = ctx.createConicGradient(angAt(side, lo), cx, G.cy), sp = (f1 - f0) * G.span / (2 * Math.PI);
-        for (var q = 0; q <= 8; q++) g.addColorStop(sp * q / 8, palAt(p, (side < 0) === (lead > 0) ? q / 8 : 1 - q / 8));
-        g.addColorStop(Math.min(1, sp + 0.001), palAt(p, (side < 0) === (lead > 0) ? 1 : 0));
-        ctx.strokeStyle = g; arcPath(side, rb, f0, f1); ctx.stroke();
+        // the conic runs clockwise from lo; colour by distance from the start of the fill
+        var g = ctx.createConicGradient(lo, cx, G.cy);
+        for (var q = 0; q <= 8; q++) g.addColorStop(Math.min(1, sp * q / 8), palAt(p, up ? q / 8 : 1 - q / 8));
+        if (sp < 0.999) g.addColorStop(Math.min(1, sp + 0.001), palAt(p, up ? 1 : 0));
+        ctx.strokeStyle = g; ringPath(cx, rb, a0, a1); ctx.stroke();
       } else {
-        var n = Math.max(2, Math.ceil((f1 - f0) * 60));
+        var n = Math.max(2, Math.ceil(sp * 90));
         for (var k = 0; k < n; k++) {
-          var a = f0 + (f1 - f0) * k / n, b = f0 + (f1 - f0) * (k + 1) / n + 0.002;
-          ctx.strokeStyle = palAt(p, lead > 0 ? (k + 1) / n : 1 - k / n); arcPath(side, rb, Math.min(a, f1), Math.min(b, f1)); ctx.stroke();
+          ctx.strokeStyle = palAt(p, (k + 1) / n); ringPath(cx, rb, a0 + (a1 - a0) * k / n, a0 + (a1 - a0) * Math.min(1, (k + 1.05) / n)); ctx.stroke();
         }
       }
       // a bright edge where the value is, and a sprinkle of light in the band
-      var ea = angAt(side, lead > 0 ? f1 : f0), c = Math.cos(ea), sn = Math.sin(ea);
+      var c = Math.cos(a1), sn = Math.sin(a1);
       ctx.beginPath(); ctx.moveTo(cx + c * (rb - bw / 2), G.cy + sn * (rb - bw / 2)); ctx.lineTo(cx + c * (rb + bw / 2), G.cy + sn * (rb + bw / 2));
       ctx.strokeStyle = "#fff"; ctx.globalAlpha = 0.85 * ringDim; ctx.lineWidth = 2 * dpr; ctx.stroke();
-      if (hq) for (var j = 0; j < 46; j++) {
-        var fj = (j * 0.618034) % 1, dj = ((j * 0.414214) % 1) - 0.5;
-        if (fj < f0 || fj > f1) continue;
-        var aj = angAt(side, fj), rj = rb + dj * bw * 0.8;
-        ctx.beginPath(); ctx.arc(cx + Math.cos(aj) * rj, G.cy + Math.sin(aj) * rj, (0.5 + (j % 3) * 0.45) * dpr, 0, Math.PI * 2);
-        ctx.fillStyle = "#fff"; ctx.globalAlpha = (0.25 + (j % 4) * 0.12) * ringDim; ctx.fill();
+      if (hq) for (var j = 0; j < 60; j++) {
+        var aj = lo + ((j * 0.618034) % 1) * TAU, dj = ((j * 0.414214) % 1) - 0.5;
+        if (((aj - lo) % TAU) > sp * TAU) continue;
+        var rj = rb + dj * bw * 0.8;
+        ctx.beginPath(); ctx.arc(cx + Math.cos(aj) * rj, G.cy + Math.sin(aj) * rj, (0.5 + (j % 3) * 0.45) * dpr, 0, TAU);
+        ctx.fillStyle = "#EFFFF2"; ctx.globalAlpha = (0.2 + (j % 4) * 0.1) * ringDim; ctx.fill();
       }
     });
     ctx.globalAlpha = 1; ctx.lineCap = "round";
   }
-  var REGEN_Z = 0.16;            // where 0 kW sits on the power arc; regen fills below it
+  // ---- Matrix background: faint falling glyphs, a few frames a second, still under reduced motion
+  var rain = { cv: $("rain"), cols: [], t: 0, w: 0, h: 0, fs: 0 };
+  var GLYPHS = "ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ012345789Z:.=*+-<>";
+  function rainStep(now) {
+    if (!matrix || settings.hud || (window.HaloDrives && HaloDrives.saver)) return;
+    var c = rain.cv, x = c.getContext("2d"), w = innerWidth, h = innerHeight, i;
+    if (w !== rain.w || h !== rain.h) {
+      rain.w = w; rain.h = h; c.width = w; c.height = h; rain.fs = Math.max(12, Math.round(h / 26));
+      rain.cols = []; for (i = 0; i < Math.ceil(w / rain.fs); i++) rain.cols.push(Math.random() * -h / rain.fs);
+      x.fillStyle = "#010803"; x.fillRect(0, 0, w, h);
+    }
+    if (now - rain.t < (reduceMotion ? 1e9 : 0.08)) return; rain.t = now;
+    x.fillStyle = "rgba(1,8,3,0.14)"; x.fillRect(0, 0, w, h);          // older glyphs fade into trails
+    x.font = rain.fs + "px monospace"; x.textAlign = "center";
+    for (i = 0; i < rain.cols.length; i++) {
+      var y = rain.cols[i];
+      if (y >= 0) {
+        x.fillStyle = Math.random() < 0.1 ? "#C8FFD6" : "#00C734";
+        x.fillText(GLYPHS[(Math.random() * GLYPHS.length) | 0], i * rain.fs + rain.fs / 2, y * rain.fs);
+      }
+      rain.cols[i] = y * rain.fs > h && Math.random() > 0.97 ? Math.random() * -20 : y + 1;
+    }
+  }
+  Dash.onFrame(function (s, dt, now) { rainStep(now); });
+  var POWER_SWEEP = 0.75;        // share of the power ring for driving; the rest, anticlockwise from the top, is regen
   function drawGauges(s, hq) {
     var imp = s.isImperial !== false, max = imp ? 140 : 200, step = imp ? 20 : 40, ticks = [], v;
-    for (v = 0; v <= max; v += step / 2) ticks.push([v / max, v % step ? null : String(v)]);
-    var pal = warnStage === 2 ? PAL.orange : warnStage === 1 ? PAL.amber : PAL.pink;
-    gauge(-1, ticks, [[0, Math.min(1, Math.max(0, s.egoSpeed) / max), pal, 1]], hq);
+    // speed: 0 at the top, the full scale all the way round (the top shows 0 only)
+    for (v = 0; v < max; v += step / 2) ticks.push([TOP + v / max * TAU, v % step ? null : String(v)]);
+    var pal = warnStage === 2 ? PAL.orange : warnStage === 1 ? PAL.amber : PAL.mx;
+    gauge(G.cl, ticks, [[TOP, TOP + Math.min(0.999, Math.max(0, s.egoSpeed) / max) * TAU, pal]], hq);
     // power: kW when the car reports its limit, otherwise percent of it
     var md = s.maxDischargePower > 0 ? s.maxDischargePower : 100, ps = md > 400 ? 100 : md > 160 ? 50 : 25;
     ticks = [];
-    for (v = 0; v <= md + 0.01; v += ps / 2) ticks.push([REGEN_Z + (1 - REGEN_Z) * v / md, v % ps ? null : String(v)]);
-    ticks.push([0, null]);
-    var fills = pw >= 0 ? [[REGEN_Z, REGEN_Z + (1 - REGEN_Z) * Math.min(1, pw / 100), PAL.pink, 1]]
-      : [[REGEN_Z * (1 - Math.min(1, -pw / 100)), REGEN_Z, PAL.green, -1]];
-    gauge(1, ticks, fills, hq);
+    for (v = 0; v <= md + 0.01; v += ps / 2) ticks.push([TOP + v / md * POWER_SWEEP * TAU, v % ps ? null : String(v)]);
+    ticks.push([TOP - (1 - POWER_SWEEP) * TAU * 0.5, "R"]);
+    var fills = pw >= 0 ? [[TOP, TOP + Math.min(1, pw / 100) * POWER_SWEEP * TAU, PAL.mx]]
+      : [[TOP, TOP - Math.min(1, -pw / 100) * (1 - POWER_SWEEP) * TAU, PAL.regen]];
+    gauge(G.cr, ticks, fills, hq);
   }
   function drawRing() {
     var s = Dash.state, hq = s.renderQuality !== 1, u = Math.min(H, W / 2.1) / dpr / 100, N = idx.N, RM = idx.RM, BC = idx.BC, LM = idx.LM, now = performance.now() / 1000;
     ctx.clearRect(0, 0, W, H);
-    if (!neon) { ctx.globalAlpha = ringDim; seg(0, N, C["--band"], u * 1); ctx.globalAlpha = 1; }
+    if (!matrix) { ctx.globalAlpha = ringDim; seg(0, N, C["--band"], u * 1); ctx.globalAlpha = 1; }
     else if (!(window.HaloDrives && HaloDrives.saver)) drawGauges(s, hq);
     // parked screensaver: the ring breathes slowly and nothing else is drawn
     if (window.HaloDrives && HaloDrives.saver) {
@@ -1309,7 +1325,7 @@ html, body { touch-action: none; overscroll-behavior: none; }
     $("setv").hidden = setBad;
     $("setv").textContent = s.adasOn && s.accSetSpeed > 0 ? Math.round(s.accSetSpeed) : "—";
     $("ap").classList.toggle("on", !!s.adasOn);
-    if (neon) {
+    if (matrix) {
       $("aplbl").textContent = s.adasOn ? "ASSIST ON" : "ASSIST OFF";
       $("nset").innerHTML = s.adasOn && s.accSetSpeed > 0 && !setBad ? "SET<b>" + Math.round(s.accSetSpeed) + "</b>" : "";
       var hasMax = s.maxDischargePower > 0 || s.maxRegenPower > 0;

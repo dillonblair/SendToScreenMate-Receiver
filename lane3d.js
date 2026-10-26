@@ -129,7 +129,7 @@
 
   viz.classList.add("gl");
   var TL = [0, 0xff3b30, 0x2fcb6a, 0xffb020];
-  var steer = 0, scroll = 0, ap = 0, pw = 0, day = null, neonWas = null, apHex = 0x3d7bff, w = 0, h = 0, v3 = new T.Vector3();
+  var steer = 0, scroll = 0, ap = 0, pw = 0, day = null, matrixWas = null, apHex = 0x3d7bff, w = 0, h = 0, v3 = new T.Vector3();
 
   Dash.onFrame(function (s, dt, now) {
     var on = s.renderQuality !== 1;
@@ -139,11 +139,11 @@
     var cw = cv.clientWidth, ch = cv.clientHeight;
     if (cw !== w || ch !== h) { w = cw; h = ch; renderer.setSize(w, h, false); camera.aspect = w / Math.max(1, h); camera.updateProjectionMatrix(); }
 
-    // the Neon theme is always dark, and paints assist in its own colour
-    var neon = document.documentElement.classList.contains("neon"), dk = !s.darkMode && !neon;
-    if (day !== dk || neonWas !== neon) {
-      day = dk; neonWas = neon;
-      apHex = neon ? 0x39d5ff : 0x3d7bff; pathMat.color.setHex(apHex);
+    // the Matrix theme is always dark, and paints assist in its own colour
+    var matrix = document.documentElement.classList.contains("matrix"), dk = !s.darkMode && !matrix;
+    if (day !== dk || matrixWas !== matrix) {
+      day = dk; matrixWas = matrix;
+      apHex = matrix ? 0x39d5ff : 0x3d7bff; pathMat.color.setHex(apHex);
       var bg = new T.Color(getComputedStyle(document.documentElement).getPropertyValue("--bg").trim());
       scene.fog = new T.Fog(bg, 30, FAR - 5);
       roadMat.color.set(day ? 0xdfe2e7 : 0x14171c);
