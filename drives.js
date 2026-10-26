@@ -174,6 +174,7 @@
     if (!trip && s.gear >= 2 && s.gear <= 4 && s.egoSpeed > 0.5) startTrip(s);
     if (trip) {
       trip.km += s.egoSpeed * (s.isImperial ? KM_PER_MI : 1) * dt / 3600;
+      api.tripKm = trip.km;           // for the S2000 theme's trip meter
       var kw = powerKw(s);
       trip.kwh += kw * dt / 3600;
       if (kw < 0) trip.regen -= kw * dt / 3600;

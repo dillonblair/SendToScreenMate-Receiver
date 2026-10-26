@@ -405,11 +405,18 @@ html, body { touch-action: none; overscroll-behavior: none; }
   color: var(--dim); font-weight: 600; font-size: calc(var(--u) * 3); letter-spacing: .06em; transition: opacity .8s; }
 .verToast.gone { opacity: 0; }
 .sheet .ver { color: var(--dim); font-weight: 600; font-size: calc(var(--u) * 3); letter-spacing: .06em; margin-right: calc(var(--u) * 3); }
+/* ---- S2000 theme (Display → Theme): s2000.js draws a digital cluster after the Honda
+   S2000's on #s2k; the usual dash, ring and lane view step aside. Always dark. */
+:root.s2000, :root.s2000.day { --bg: #000; --ink: #F3F3EE; --dim: #8C8F94; --faint: #24272B; --band: #111; --ap: #3D7BFF; }
+#s2k { display: none; position: fixed; inset: 0; width: 100%; height: 100%; }
+.s2000 #s2k { display: block; }
+.s2000 .wrap, .s2000 .top, .s2000 .odo, .s2000 .nkw, .s2000 #c, .s2000 .tells { display: none; }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
 </head>
 <body>
 <canvas id="c"></canvas>
+<canvas id="s2k" aria-label="S2000-style cluster"></canvas>
 <div class="top">
   <div class="batt" id="battWrap"><small class="blbl">BATTERY</small><div class="cell"><i id="battFill"></i></div><span><span id="bat">—</span>%</span></div>
   <div class="right">
@@ -570,9 +577,9 @@ html, body { touch-action: none; overscroll-behavior: none; }
         <div class="field">
           <b id="themeLbl">Theme</b>
           <div class="seg" role="radiogroup" aria-labelledby="themeLbl" data-key="theme" data-def="halo">
-            <button type="button" role="radio" data-v="halo">Halo</button><button type="button" role="radio" data-v="neon">Neon</button>
+            <button type="button" role="radio" data-v="halo">Halo</button><button type="button" role="radio" data-v="neon">Neon</button><button type="button" role="radio" data-v="s2000">S2000</button>
           </div>
-          <small>Neon: glowing arc gauges for speed and power. Always dark.</small>
+          <small>Neon: glowing arc gauges. S2000: a digital cluster after Honda's. Both always dark.</small>
         </div>
         <div class="field">
           <b id="layLbl">Layout</b>
@@ -644,7 +651,7 @@ html, body { touch-action: none; overscroll-behavior: none; }
 (function () {
   var $ = function (id) { return document.getElementById(id); };
   // ---- build number: raise it with every change pushed, so the car shows which build it has
-  var HALO_VERSION = "1.0";
+  var HALO_VERSION = "1.1";
   $("ver").textContent = "Halo v" + HALO_VERSION; $("verToast").textContent = "Halo v" + HALO_VERSION;
   setTimeout(function () { $("verToast").classList.add("gone"); }, 3500);
   var cv = $("c"), ctx = cv.getContext("2d"), W, H, P = [], idx = {};
@@ -664,10 +671,11 @@ html, body { touch-action: none; overscroll-behavior: none; }
     }
     return sx;
   }
-  var neon = false, G = null;   // Neon theme: arc gauge geometry, in canvas pixels
+  var neon = false, s2k = false, G = null;   // Neon theme: arc gauge geometry, in canvas pixels
   function build() {
     W = cv.width = innerWidth * dpr; H = cv.height = innerHeight * dpr;
     var sx = sideInset() * dpr;
+    window.HaloSx = sx / dpr;
     if (neon) { buildNeon(sx); return; }
     var m = Math.min(H, W / 2.1) * 0.03, r = Math.min(H, W) * 0.08, x0 = m + sx, y0 = m, x1 = W - m - sx, y1 = H - m;
     P = []; idx = {};
@@ -791,6 +799,7 @@ html, body { touch-action: none; overscroll-behavior: none; }
   function duoChanged() { var was = duo; applyDuo(); if (duo && !was && settings.hud) setHud(true); }
   window.addEventListener("resize", duoChanged); window.addEventListener("hashchange", duoChanged);
   window.HaloSave = function () { saveSettings(settings); };
+  window.HaloDim = function () { return ringDim; };
   // ---- lane view: Auto (the default) shows it while assist is on and hides it a few
   // seconds after assist ends; Always; or Off. The old on/off switch maps onto these.
   // #novis in the URL previews Off without saving it.
@@ -814,21 +823,24 @@ html, body { touch-action: none; overscroll-behavior: none; }
   // #lay-a ... #lay-d in the URL previews a layout without saving it
   function applyLayout() {
     var m = location.hash.match(/lay-(classic|[a-d])/), v = m ? m[1] : settings.layout || "classic";
-    if (neon) v = "classic";      // Neon has its own arrangement
+    if (neon || s2k) v = "classic";      // Neon and S2000 have their own arrangement
     ["a", "b", "c", "d"].forEach(function (k) { document.body.classList.toggle("lay-" + k, v === k); });
     build(); lastRing = "";      // the ring's notch margin depends on the layout
   }
   applyLayout();
   window.addEventListener("hashchange", applyLayout);
-  // #neon in the URL previews the Neon theme, until a theme is picked in settings
-  var themePreview = location.hash.indexOf("neon") >= 0;
+  // #neon or #s2000 in the URL previews that theme, until a theme is picked in settings
+  function hashTheme() { return location.hash.indexOf("neon") >= 0 ? "neon" : location.hash.indexOf("s2000") >= 0 ? "s2000" : ""; }
+  var themePreview = hashTheme();
   function applyTheme() {
-    neon = themePreview || settings.theme === "neon";
+    var th = themePreview || settings.theme || "halo";
+    neon = th === "neon"; s2k = th === "s2000";
     document.documentElement.classList.toggle("neon", neon);
+    document.documentElement.classList.toggle("s2000", s2k);
     day = null;                  // re-read the theme's colours on the next frame
     applyLayout();
   }
-  window.addEventListener("hashchange", function () { themePreview = location.hash.indexOf("neon") >= 0; applyTheme(); });
+  window.addEventListener("hashchange", function () { themePreview = hashTheme(); applyTheme(); });
   // demo page buttons switch modes through the hash
   window.addEventListener("hashchange", applyLaneView);
   function host(androidMethod, iosHandler, value) {
@@ -949,7 +961,7 @@ html, body { touch-action: none; overscroll-behavior: none; }
   sw.innerHTML = '<button type="button" role="radio" class="auto" data-v="auto" aria-label="Auto">AUTO</button>' +
     HaloCar.PAINTS.map(function (p) { return '<button type="button" role="radio" data-v="' + p.id + '" aria-label="' + p.name + '" style="background-color:' + p.hex + '"></button>'; }).join("");
   function pick(group, key, v) {
-    if (key === "theme") themePreview = false;      // the driver's choice beats a #neon preview
+    if (key === "theme") themePreview = "";         // the driver's choice beats a #neon / #s2000 preview
     if (key === "laneMode") delete settings.laneView;
     settings[key] = v; saveSettings(settings); applyTheme(); applyLaneView(); syncCarUi();
     hudImage();
@@ -961,15 +973,15 @@ html, body { touch-action: none; overscroll-behavior: none; }
   sw.addEventListener("click", function (e) { var b = e.target.closest("button"); if (b) pick(sw, "paint", b.dataset.v); });
   function syncCarUi() {
     [].forEach.call(document.querySelectorAll(".seg"), function (g) {
-      var cur = g.dataset.key === "theme" ? (neon ? "neon" : "halo") : g.dataset.key === "laneMode" ? laneMode()
+      var cur = g.dataset.key === "theme" ? (neon ? "neon" : s2k ? "s2000" : "halo") : g.dataset.key === "laneMode" ? laneMode()
         : settings[g.dataset.key] || g.dataset.def || "auto";
       [].forEach.call(g.children, function (b) { b.setAttribute("aria-checked", b.dataset.v === cur ? "true" : "false"); });
     });
     var offs = Dash.state.isImperial === false ? WARN_KMH : WARN_MPH;
     [].forEach.call($("overSeg").children, function (b, i) { b.textContent = "+" + offs[i]; });
     $("overSeg").setAttribute("aria-disabled", settings.warn === "off" ? "true" : "false");
-    $("laySeg").setAttribute("aria-disabled", neon ? "true" : "false");
-    $("layNote").textContent = neon ? "Neon has its own layout, already clear of an iPhone notch. These apply to the Halo theme."
+    $("laySeg").setAttribute("aria-disabled", neon || s2k ? "true" : "false");
+    $("layNote").textContent = neon || s2k ? "This theme has its own layout. These apply to the Halo theme."
       : "Where the gears, speed-limit sign and Autopilot sit. All but Classic keep them clear of an iPhone notch.";
     var fixed = (settings.bright || "auto") !== "auto";
     $("nightSeg").setAttribute("aria-disabled", fixed ? "true" : "false");
@@ -1003,8 +1015,8 @@ html, body { touch-action: none; overscroll-behavior: none; }
   if (settings.hud && duo) setHud(true);
 
   Dash.onFrame(function (s, dt, now) {
-    if (day !== (!s.darkMode && !neon)) {
-      day = !s.darkMode && !neon; document.documentElement.classList.toggle("day", day);
+    if (day !== (!s.darkMode && !neon && !s2k)) {
+      day = !s.darkMode && !neon && !s2k; document.documentElement.classList.toggle("day", day);
       ["--band", "--ap"].forEach(function (k) { C[k] = css(k); });
     }
     var hq = s.renderQuality !== 1;
@@ -1082,6 +1094,8 @@ html, body { touch-action: none; overscroll-behavior: none; }
     var up = by > 0 ? (by > step ? 2 : 1) : 0, down = by > -1 ? (by > step - 1 ? 2 : 1) : 0;
     warnStage = mode === "off" ? 0 : up > warnStage ? up : Math.min(warnStage, down);
     warnBy = Math.max(0, by);
+    // for the S2000 theme: the warning stage, and the speed where its bars turn red
+    window.HaloWarn = { stage: warnStage, at: mode !== "off" && s.fusedSpeedLimit > 0 ? s.fusedSpeedLimit + off : 0 };
   }
   // ---- Neon gauges: speed on the left arc, power on the right
   var PAL = { pink: ["#5E1488", "#D63CC0", "#FFA6EC"], amber: ["#7A3300", "#FFB020", "#FFE2A6"],
@@ -1336,5 +1350,6 @@ html, body { touch-action: none; overscroll-behavior: none; }
 </script>
 <script src="drives.js"></script>
 <script src="lane3d.js"></script>
+<script src="s2000.js"></script>
 </body>
 </html>
