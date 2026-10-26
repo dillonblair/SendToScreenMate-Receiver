@@ -120,6 +120,11 @@
       ctx.beginPath(); ctx.moveTo(-0.48, -0.06); ctx.quadraticCurveTo(0, -0.18, 0.48, -0.06); ctx.moveTo(0, 0.12); ctx.lineTo(0, 0.5); ctx.stroke();
     } else if (kind === "bolt") {
       poly([0.1, -0.55, -0.3, 0.08, -0.02, 0.08, -0.12, 0.55, 0.3, -0.1, 0.02, -0.1]);
+    } else if (kind === "car") {
+      rrect(-0.28, -0.5, 0.56, 1, 0.16); ctx.fill();
+      ctx.fillStyle = "rgba(0,0,0,0.55)"; rrect(-0.2, -0.28, 0.4, 0.2, 0.05); ctx.fill(); rrect(-0.2, 0.22, 0.4, 0.14, 0.05); ctx.fill();
+      ctx.lineWidth = 0.09;
+      [0.48, 0.68].forEach(function (r) { ctx.beginPath(); ctx.arc(0.05, 0, r, -0.6, 0.6); ctx.stroke(); });
     } else if (kind === "batt") {
       ctx.strokeRect(-0.4, -0.25, 0.8, 0.5); ctx.fillRect(0.42, -0.1, 0.1, 0.2); ctx.fillRect(-0.3, -0.15, 0.35, 0.3);
     }
@@ -286,19 +291,16 @@
     lamp("SEAT", "BELT", W * 0.63, RED, s.gear === 4 && !s.buckleStatus);
     lamp("DOOR", "OPEN", W * 0.73, RED, !!s.anyDoorOpen);
 
-    // ---- blind spots: the face's own edge glows red on that side, fading toward the middle;
-    // full strength whatever the brightness, pulsing when urgent
+    // ---- blind spots: a car-alongside lamp in that end of the strip (empty space, so it
+    // never overlaps anything); full strength whatever the brightness, pulsing when urgent
     ctx.globalAlpha = 1;
-    [[bsL, 0, W * 0.5], [bsR, W, W * 0.55]].forEach(function (b) {
+    [[bsL, W * 0.085, -1], [bsR, W * 0.915, 1]].forEach(function (b) {
       if (!b[0]) return;
-      var a = b[0] === 2 ? pulse : 0.85, g = ctx.createLinearGradient(b[1], 0, b[2], 0);
-      g.addColorStop(0, "rgba(255,43,28," + a.toFixed(2) + ")"); g.addColorStop(0.55, "rgba(255,43,28," + (a * 0.35).toFixed(2) + ")"); g.addColorStop(1, "rgba(255,43,28,0)");
-      ctx.save(); face(); ctx.clip();                  // a soft red wash inside that edge
-      var wash = ctx.createLinearGradient(b[1], 0, b[1] + (b[2] - b[1]) * 0.5, 0);
-      wash.addColorStop(0, "rgba(255,43,28," + (a * 0.16).toFixed(2) + ")"); wash.addColorStop(1, "rgba(255,43,28,0)");
-      ctx.fillStyle = wash; ctx.fillRect(0, 0, W, H); ctx.restore();
-      face(); ctx.strokeStyle = g; ctx.lineWidth = 3; ctx.shadowColor = RED; ctx.shadowBlur = GLOW ? GLOW * 2.2 : 0; ctx.stroke();
-      ctx.shadowBlur = 0;
+      var a = b[0] === 2 ? pulse : 1;
+      ctx.save(); ctx.translate(b[1], sy0 + sh * 0.5); ctx.scale(b[2], 1);   // waves face outward
+      if (GLOW) { ctx.shadowColor = RED; ctx.shadowBlur = GLOW * 1.6; }
+      icon("car", 0, 0, sh * 0.62, "rgba(255,43,28," + a.toFixed(2) + ")");
+      ctx.restore();
     });
     ctx.globalAlpha = 1;
   }
