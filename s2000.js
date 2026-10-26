@@ -131,18 +131,249 @@
     ctx.restore();
   }
 
+  // ---- three layouts share the data, warnings and colours. Each style keeps its own colour
+  // scheme (settings.s2kColors[style]); Classic falls back to the older single s2kColor.
+  var STYLE_COLOUR = { classic: "sport", modern: "white", redlcd: "red" };
+  function colourOf(st) {
+    var style = st.s2kStyle || "classic", m = st.s2kColors || {};
+    return m[style] || (style === "classic" && st.s2kColor) || STYLE_COLOUR[style];
+  }
+  window.HaloS2kColour = colourOf;
+  function mixBlack(hex, k) { var n = parseInt(hex.slice(1), 16); return "rgb(" + [n >> 16, n >> 8 & 255, n & 255].map(function (v) { return Math.round(v * (1 - k)); }).join(",") + ")"; }
+  function rgba(hex, a) { var n = parseInt(hex.slice(1), 16); return "rgba(" + (n >> 16) + "," + (n >> 8 & 255) + "," + (n & 255) + "," + a + ")"; }
+  function bandColour(K, t, redFrom) { var bd = K.bands ? K.bands.filter(function (b) { return t < b[0]; })[0] : null; return t >= redFrom ? (K.zone || RED) : bd ? bd[1] : K.lit; }
+  // blind spots, as in Classic: a car alongside tints that side's arrow red; signalling into it pulses
+  function blindSpots(s) {
+    var show = s.alwaysOnBlindSpotMonitor || s.leftBlinker || s.rightBlinker || s.dataSourceType === "demo";
+    function lvl(bs, blink) { return !show || !bs ? 0 : bs === 2 || blink ? 2 : 1; }
+    return { L: lvl(s.leftBlindSpot, s.leftBlinker), R: lvl(s.rightBlindSpot, s.rightBlinker), pulse: 0.55 + 0.45 * Math.sin(performance.now() / 1000 * 14) };
+  }
+  function turnArrow(x, y, size, dir, blink, lvl, pulse) {
+    var c = lvl === 2 ? "rgba(255,43,28," + pulse.toFixed(2) + ")" : blink === 2 ? GREEN : lvl ? "rgba(255,43,28,0.4)" : OFF;
+    ctx.save();
+    if (GLOW && (blink === 2 || lvl)) { ctx.shadowColor = lvl ? RED : GREEN; ctx.shadowBlur = GLOW * 1.4; }
+    if (lvl) ctx.globalAlpha = 1;
+    arrow(x, y, size, dir, c); ctx.restore();
+  }
+  function carLamp(x, y, size, side, lvl, pulse) {        // side -1 left, 1 right: the waves face outward
+    if (!lvl) return;
+    ctx.save(); ctx.globalAlpha = 1; ctx.translate(x, y); ctx.scale(side, 1);
+    if (GLOW) { ctx.shadowColor = RED; ctx.shadowBlur = GLOW * 1.6; }
+    icon("car", 0, 0, size, "rgba(255,43,28," + (lvl === 2 ? pulse : 1).toFixed(2) + ")"); ctx.restore();
+  }
+  function lightAhead(s, settings, imp) {
+    var tl = settings.stopLine === false ? 0 : s.trafficLightColor;
+    return { c: ["", RED, GREEN, AMBER][tl] || "", d: tl && s.stopLineDist > 0 ? (imp ? Math.round(s.stopLineDist * 3.281) + " FT" : Math.round(s.stopLineDist) + " M") : "" };
+  }
+  function clockText(s, imp) {
+    var d = new Date(s.currentTime || Date.now()), h = d.getHours(), m = d.getMinutes();
+    if (imp) h = h % 12 || 12;
+    return h + ":" + (m < 10 ? "0" : "") + m;
+  }
+
+  // ---- Modern: after Honda's later digital S2000-style screen. A wide arc of fine bars with
+  // bold numbers inside, a big rounded speed, two small arc gauges stepping down the right
+  // (power, battery), an info row, and lamps in the bottom corners.
+  function drawModern(o) {
+    var s = o.s, W = o.W, H = o.H, K = o.K, imp = o.imp, max = o.max, step = o.step, warn = o.warn;
+    var cx = W * 0.46, cy = H * 0.95, rx = W * 0.44, ry = H * 0.9, A0 = 170, A1 = 60;
+    function at(t, k, a0, a1, sc) { var a = ((a0 || A0) - ((a0 || A0) - (a1 || A1)) * t) * D2R; sc = sc || 1; return [cx + Math.cos(a) * rx * k * sc, cy - Math.sin(a) * ry * k * sc]; }
+    var frac = Math.min(1, spd / max), redFrom = warn.at > 0 ? Math.min(1, warn.at / max) : 0.875;
+    // the band: fine bars, dark grey when unlit, the scheme's colour when lit, red past the warning point
+    var N = 120;
+    for (var i = 0; i < N; i++) {
+      var t0 = (i + 0.2) / N, t1 = (i + 0.8) / N, lit = (i + 1) / N <= frac + 0.0005, red = t0 >= redFrom, a = at(t0, 0.93), b = at(t0, 1), c = at(t1, 1), d = at(t1, 0.93);
+      ctx.shadowBlur = lit && GLOW ? GLOW * 0.7 : 0; ctx.shadowColor = bandColour(K, t0, redFrom);
+      ctx.fillStyle = lit ? bandColour(K, t0, redFrom) : red ? "rgba(255,43,28,0.22)" : "rgba(255,255,255,0.1)";
+      poly([a[0], a[1], b[0], b[1], c[0], c[1], d[0], d[1]]);
+    }
+    ctx.shadowBlur = 0;
+    // ticks and bold numbers inside the band
+    var fs = Math.round(H * 0.1);
+    for (var v = 0; v <= max; v += step / 2) {
+      var tt = v / max, major = v % step === 0, p1 = at(tt, 0.875), p2 = at(tt, major ? 0.83 : 0.85);
+      ctx.strokeStyle = TXT; ctx.lineWidth = major ? 3 : 2; ctx.lineCap = "butt"; ctx.beginPath(); ctx.moveTo(p1[0], p1[1]); ctx.lineTo(p2[0], p2[1]); ctx.stroke();
+      if (major) { var q = at(tt, 0.72); label(String(v / 10), q[0], q[1] + fs * 0.36, fs, TXT, "center", 700, false, GLOW * 0.4); }
+    }
+    ctx.lineCap = "round";
+    // the speed: big and rounded, orange then red over the limit; gear and units under it
+    var wc = K.warn || [ORANGE, RED], sc = warn.stage === 2 ? wc[1] : warn.stage === 1 ? wc[0] : "#FFFFFF";
+    label(String(Math.round(s.egoSpeed)), cx, H * 0.66, Math.round(H * 0.3), sc, "center", 700, false, GLOW * 1.2);
+    label(imp ? "mph" : "km/h", cx, H * 0.8, Math.round(H * 0.055), "#C9CCD1", "center", 500, false);
+    var bs = blindSpots(s), as = H * 0.07;
+    turnArrow(cx - W * 0.15, H * 0.56, as, -1, s.leftBlinker, bs.L, bs.pulse);
+    turnArrow(cx + W * 0.15 + as, H * 0.56, as, 1, s.rightBlinker, bs.R, bs.pulse);
+    // info row: power, clock, (units), date, battery; then gear, odometer, trip
+    var big = Math.round(H * 0.058), small = Math.round(H * 0.026), r1 = H * 0.8, r2 = H * 0.93;
+    var kwMax = s.maxDischargePower > 0 ? s.maxDischargePower : 0, regenMax = s.maxRegenPower > 0 ? s.maxRegenPower : 0;
+    var kw = kwMax || regenMax ? Math.round(pw >= 0 ? pw / 100 * kwMax : pw / 100 * regenMax) : Math.round(pw);
+    label(String(kw), W * 0.215, r1, big, pw < -0.5 ? GREEN : TXT, "right", 600, false);
+    label(kwMax || regenMax ? "kW" : "%", W * 0.222, r1 - big * 0.42, Math.round(small * 1.3), TXT, "left", 600, false);
+    label("POWER", W * 0.222, r1, small, "#8C9096", "left", 600, false);
+    label(clockText(s, imp), W * 0.345, r1, Math.round(big * 0.8), TXT, "center", 600, false);
+    var dd = new Date(s.currentTime || Date.now());
+    label((dd.getMonth() < 9 ? "0" : "") + (dd.getMonth() + 1) + "-" + (dd.getDate() < 10 ? "0" : "") + dd.getDate(), W * 0.575, r1, Math.round(big * 0.8), TXT, "center", 600, false);
+    var chg = window.Dash && Dash.charge ? Dash.charge(s) : -1;
+    if (chg >= 0 && s.showCarBattery !== false) {
+      label(String(chg), W * 0.72, r1, big, chg < 20 ? RED : TXT, "left", 600, false);
+      label("%", W * 0.713, r1 - big * 0.42, Math.round(small * 1.3), TXT, "right", 600, false);
+      label("BATTERY", W * 0.713, r1, small, "#8C9096", "right", 600, false);
+    }
+    label(["", "P", "R", "N", "D"][s.gear] || "", cx, r2, Math.round(big * 1.05), TXT, "center", 700, false, GLOW * 0.5);
+    if (s.showOdometer !== false && s.odometer > 0) {
+      label("ODO", W * 0.31, r2 - big * 0.95, small, "#8C9096", "left", 600, false);
+      label(Math.round(s.odometer).toLocaleString("en-US"), W * 0.31, r2, Math.round(big * 0.72), TXT, "left", 600, false);
+    }
+    var trip = window.HaloDrives && HaloDrives.tripKm || 0;
+    label("TRIP", W * 0.61, r2 - big * 0.95, small, "#8C9096", "right", 600, false);
+    label((imp ? trip / KM_PER_MI : trip).toFixed(1), W * 0.61, r2, Math.round(big * 0.72), TXT, "right", 600, false);
+    // the two shoulder gauges, short arcs stepping down the right: power, then battery
+    function shoulder(a0, a1, sc, k0, n, litN, colour, redEnd) {
+      for (var j = 0; j < n; j++) {
+        var u0 = (j + 0.2) / n, u1 = (j + 0.8) / n, q0 = at(u0, k0, a1, a0, sc), q1 = at(u0, 1, a1, a0, sc), q2 = at(u1, 1, a1, a0, sc), q3 = at(u1, k0, a1, a0, sc);
+        var on = j < litN, isRed = redEnd(j);
+        ctx.shadowBlur = on && GLOW ? GLOW * 0.7 : 0; ctx.shadowColor = colour(j);
+        ctx.fillStyle = on ? colour(j) : isRed ? "rgba(255,43,28,0.22)" : "rgba(255,255,255,0.1)";
+        poly([q0[0], q0[1], q1[0], q1[1], q2[0], q2[1], q3[0], q3[1]]);
+      }
+      ctx.shadowBlur = 0;
+    }
+    var gs = Math.round(H * 0.05), n1 = 12, p1n = Math.round(Math.min(1, Math.abs(pw) / 100) * n1);
+    // power: 0 at the lower end, P (red) at the upper; green when regenerating
+    shoulder(51, 37, 1, 0.91, n1, p1n, function (j) { return pw < 0 ? GREEN : j >= n1 - 2 ? RED : K.lit; }, function (j) { return j >= n1 - 2; });
+    var e0 = at(1, 0.84, 37, 51, 1), e1 = at(0, 0.84, 37, 51, 1), ic = at(0.5, 0.8, 37, 51, 1);
+    label("P", e0[0], e0[1] + gs * 0.35, gs, RED, "center", 600, false); label("0", e1[0], e1[1] + gs * 0.35, gs, TXT, "center", 600, false);
+    icon("bolt", ic[0] - gs * 0.6, ic[1], H * 0.05, TXT);
+    if (chg >= 0 && s.showCarBattery !== false) {
+      // battery, a step further down: F at the upper end, E (red) at the lower
+      var n2 = 12, b2 = Math.round(chg / 100 * n2);
+      shoulder(31, 15, 1.0, 0.91, n2, b2, function (j) { return j < 2 || chg < 20 ? RED : K.lit; }, function (j) { return j < 2; });
+      var f0 = at(1, 0.84, 15, 31, 1), f1 = at(0, 0.84, 15, 31, 1), bi = at(0.5, 0.8, 15, 31, 1);
+      label("F", f0[0], f0[1] + gs * 0.35, gs, TXT, "center", 600, false); label("E", f1[0], f1[1] + gs * 0.35, gs, RED, "center", 600, false);
+      icon("batt", bi[0] - gs * 0.6, bi[1], H * 0.05, AMBER);
+    }
+    // lamps: blind spots and belt in the left corner, door and the light ahead in the right;
+    // assist and set speed where the S2000 has its headlight lamp; the limit by the trip
+    var ly = H * 0.955, ls = H * 0.065;
+    carLamp(W * 0.035, ly - ls * 0.2, ls, -1, bs.L, bs.pulse);
+    if (s.gear === 4 && !s.buckleStatus) icon("belt", W * 0.08, ly - ls * 0.2, ls * 0.9, RED);
+    if (s.adasOn) { icon("wheel", W * 0.2, ly - ls * 0.25, ls * 0.8, GREEN); if (s.accSetSpeed > 0) label("SET " + Math.round(s.accSetSpeed), W * 0.225, ly - ls * 0.05, Math.round(H * 0.04), GREEN, "left", 700, false, GLOW); }
+    if (s.fusedSpeedLimit > 0) label("LIMIT " + Math.round(s.fusedSpeedLimit), W * 0.68, ly - ls * 0.05, Math.round(H * 0.04), ORANGE, "left", 700, false, GLOW);
+    var la = lightAhead(s, o.settings, imp);
+    if (la.c) label(la.d || "LIGHT", W * 0.82, ly - ls * 0.05, Math.round(H * 0.04), la.c, "left", 700, false, GLOW);
+    if (s.anyDoorOpen) label("DOOR", W * 0.91, ly - ls * 0.05, Math.round(H * 0.04), RED, "right", 800, false, GLOW);
+    carLamp(W * 0.965, ly - ls * 0.2, ls, 1, bs.R, bs.pulse);
+  }
+
+  // ---- Red LCD: after the S2000 cluster with the red-backlit LCD. A thick lit band with a
+  // hatched redline, amber digits on lit LCD windows, bar gauges either side, lamps in
+  // pill-shaped recesses and a groove along the bottom. The band and windows take the
+  // scheme's colour (red by default); the digits stay amber.
+  function drawRedLcd(o) {
+    var s = o.s, W = o.W, H = o.H, K = o.K, imp = o.imp, max = o.max, step = o.step, warn = o.warn;
+    var AMB = "#FFD24A", AMB_GHOST = "rgba(255,210,74,0.13)", base = K.bands ? "#FF6A2A" : K.lit;
+    var cx = W * 0.5, cy = H * 0.8, rx = W * 0.42, ry = H * 0.72, A0 = 152, A1 = 28;
+    function at(t, k) { var a = (A0 - (A0 - A1) * t) * D2R; return [cx + Math.cos(a) * rx * k, cy - Math.sin(a) * ry * k]; }
+    var frac = Math.min(1, spd / max), redFrom = warn.at > 0 ? Math.min(1, warn.at / max) : 0.88, hatch = Math.max(redFrom, 0.86);
+    // the band: one continuous lit sweep (dim where unlit, as a backlit LCD shows), then hatched bars for the redline
+    var N = 90;
+    for (var i = 0; i < N; i++) {
+      var t0 = i / N, t1 = (i + 1.02) / N;
+      if (t0 >= hatch) break;
+      var lit = (i + 1) / N <= frac + 0.0005, col = bandColour(K, t0, redFrom), a = at(t0, 0.8), b = at(t0, 1), c = at(Math.min(t1, hatch), 1), d = at(Math.min(t1, hatch), 0.8);
+      ctx.shadowBlur = lit && GLOW ? GLOW * 0.8 : 0; ctx.shadowColor = col;
+      ctx.fillStyle = lit ? col : rgba(t0 >= redFrom ? RED : (K.bands ? "#FF6A2A" : K.lit), 0.26);
+      poly([a[0], a[1], b[0], b[1], c[0], c[1], d[0], d[1]]);
+    }
+    for (var h = 0; h < 6; h++) {                       // the hatched redline
+      var u0 = hatch + (1 - hatch) * (h + 0.25) / 6, u1 = hatch + (1 - hatch) * (h + 0.75) / 6, on = u1 <= frac + 0.0005;
+      var p = at(u0, 0.78), q = at(u0, 1.03), r = at(u1, 1.03), z = at(u1, 0.78);
+      ctx.shadowBlur = on && GLOW ? GLOW : 0; ctx.shadowColor = RED;
+      ctx.fillStyle = on ? "#FF3B22" : "rgba(255,59,34,0.3)"; poly([p[0], p[1], q[0], q[1], r[0], r[1], z[0], z[1]]);
+    }
+    ctx.shadowBlur = 0;
+    var fs = Math.round(H * 0.075);
+    for (var v = 0; v <= max; v += step / 2) {
+      var tt = v / max, major = v % step === 0, p1 = at(tt, 0.76), p2 = at(tt, major ? 0.7 : 0.73);
+      ctx.strokeStyle = TXT; ctx.lineWidth = major ? 2.6 : 1.6; ctx.beginPath(); ctx.moveTo(p1[0], p1[1]); ctx.lineTo(p2[0], p2[1]); ctx.stroke();
+      if (major) { var q2 = at(tt, 0.61); label(String(v / 10), q2[0], q2[1] + fs * 0.36, fs, TXT, "center", 500, false, GLOW * 0.4); }
+    }
+    var z0 = at(0.02, 0.6); label("x10" + (imp ? "mph" : "km/h"), z0[0] + fs * 0.5, z0[1] + fs * 0.36, Math.round(fs * 0.4), TXT, "left", 400, false);
+    // lit LCD windows: the scheme's colour behind amber digits
+    function window_(x, y, w, hh) {
+      var g = ctx.createLinearGradient(0, y, 0, y + hh);
+      g.addColorStop(0, mixBlack(base, 0.35)); g.addColorStop(1, mixBlack(base, 0.6));
+      rrect(x, y, w, hh, hh * 0.1); ctx.fillStyle = g; ctx.fill();
+      ctx.strokeStyle = "rgba(0,0,0,0.6)"; ctx.lineWidth = 2; ctx.stroke();
+    }
+    var ww = W * 0.19, wh = H * 0.19, wx = cx - ww / 2, wy = H * 0.41;
+    window_(wx, wy, ww, wh);
+    var dh = wh * 0.8, dw = dh * 0.52, gap = dw * 0.2, sc = warn.stage === 2 ? "#FFFFFF" : warn.stage === 1 ? "#FFF2B8" : AMB;
+    field(String(Math.round(s.egoSpeed)), 3, wx + ww - W * 0.012, wy + (wh - dh) / 2, dw, dh, gap, sc, AMB_GHOST);
+    digit(["", "P", "R", "N", "D"][s.gear] || " ", wx + W * 0.014, wy + wh * 0.5, dw * 0.45, dh * 0.4, AMB, AMB_GHOST);
+    label(imp ? "mph" : "km/h", wx + W * 0.012, wy + wh * 0.3, Math.round(H * 0.04), AMB, "left", 600, false);
+    var lx = wx, lw = ww, ly = wy + wh + H * 0.02, lh = H * 0.11;
+    window_(lx, ly, lw, lh);
+    var oh = lh * 0.55, ow = oh * 0.52, og = ow * 0.24;
+    if (s.showOdometer !== false && s.odometer > 0) field(String(Math.round(s.odometer) % 1000000), 6, lx + lw * 0.56, ly + lh * 0.32, ow, oh, og, AMB, AMB_GHOST);
+    var trip = window.HaloDrives && HaloDrives.tripKm || 0;
+    field((imp ? trip / KM_PER_MI : trip).toFixed(1), 4, lx + lw * 0.97, ly + lh * 0.32, ow, oh, og * 1.3, AMB, AMB_GHOST);
+    label("TRIP A", lx + lw * 0.8, ly + lh * 0.27, Math.round(lh * 0.22), AMB, "center", 600, false);
+    var bs = blindSpots(s), as = H * 0.065;
+    turnArrow(lx - W * 0.015 - as, ly + lh * 0.5, as, -1, s.leftBlinker, bs.L, bs.pulse);
+    turnArrow(lx + lw + W * 0.015 + as, ly + lh * 0.5, as, 1, s.rightBlinker, bs.R, bs.pulse);
+    // bar gauges either side: power (green when regenerating) and battery
+    var gy = H * 0.63, gh = H * 0.045, gw = W * 0.14, gl = Math.round(H * 0.055);
+    function hbar(x, f, colour, track) {
+      rrect(x, gy, gw, gh, 2); ctx.fillStyle = track; ctx.fill();
+      if (f > 0.005) { ctx.shadowBlur = GLOW ? GLOW * 0.8 : 0; ctx.shadowColor = colour; rrect(x, gy, gw * Math.min(1, f), gh, 2); ctx.fillStyle = colour; ctx.fill(); ctx.shadowBlur = 0; }
+      ctx.strokeStyle = TXT; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(x - 4, gy + gh + 6); ctx.lineTo(x + gw + 4, gy + gh + 6); ctx.stroke();
+    }
+    var g1 = W * 0.075;
+    hbar(g1, Math.abs(pw) / 100, pw < 0 ? GREEN : AMB, rgba(base, 0.45));
+    label("0", g1 - gl * 0.55, gy + gh, gl, TXT, "center", 400, false); label("P", g1 + gw + gl * 0.55, gy + gh, gl, TXT, "center", 400, false);
+    icon("bolt", g1 + gw * 0.25, gy - gh * 1.1, H * 0.055, TXT);
+    var chg = window.Dash && Dash.charge ? Dash.charge(s) : -1, g2 = W * 0.785;
+    if (chg >= 0 && s.showCarBattery !== false) {
+      hbar(g2, chg / 100, chg < 20 ? RED : AMB, rgba(base, 0.45));
+      label("E", g2 - gl * 0.55, gy + gh, gl, TXT, "center", 400, false); label("F", g2 + gw + gl * 0.55, gy + gh, gl, TXT, "center", 400, false);
+      icon("batt", g2 + gw * 0.75, gy - gh * 1.1, H * 0.05, TXT);
+    }
+    // pill recesses under the gauges (blind spot, belt / door) and the groove for the rest
+    function recess(x, y, w, hh) { rrect(x, y, w, hh, hh / 2); ctx.fillStyle = "#0A0B0C"; ctx.fill(); ctx.strokeStyle = "rgba(255,255,255,0.06)"; ctx.lineWidth = 1; ctx.stroke(); }
+    var py = H * 0.73, ph = H * 0.09, gy2 = H * 0.86, gh2 = H * 0.11;
+    recess(W * 0.06, py, W * 0.19, ph); recess(W * 0.75, py, W * 0.19, ph); recess(W * 0.2, gy2, W * 0.6, gh2);
+    carLamp(W * 0.1, py + ph / 2, ph * 0.75, -1, bs.L, bs.pulse);
+    carLamp(W * 0.9, py + ph / 2, ph * 0.75, 1, bs.R, bs.pulse);
+    var ts = Math.round(H * 0.045);
+    if (s.gear === 4 && !s.buckleStatus) label("BELT", W * 0.2, py + ph * 0.68, ts, RED, "center", 800, true, GLOW);
+    if (s.anyDoorOpen) label("DOOR", W * 0.8, py + ph * 0.68, ts, RED, "center", 800, true, GLOW);
+    var gyc = gy2 + gh2 * 0.68;
+    if (s.adasOn) label("ASSIST", W * 0.3, gyc, ts, GREEN, "center", 800, true, GLOW);
+    if (s.adasOn && s.accSetSpeed > 0) label("SET " + Math.round(s.accSetSpeed), W * 0.42, gyc, ts, GREEN, "center", 800, true, GLOW);
+    if (s.fusedSpeedLimit > 0) label("LIMIT " + Math.round(s.fusedSpeedLimit), W * 0.56, gyc, ts, ORANGE, "center", 800, true, GLOW);
+    var la = lightAhead(s, o.settings, imp);
+    if (la.c) label(la.d || "LIGHT", W * 0.7, gyc, ts, la.c, "center", 800, true, GLOW);
+  }
+
   // FW x FH is the screen; the cluster is laid out in a box of fixed proportions centred on
   // it, so a near-square screen (the unfolded iPhone Duo) doesn't stretch it
   function draw(s, FW, FH) {
     var imp = s.isImperial !== false, max = imp ? 140 : 220, step = imp ? 20 : 40;
     var dim = window.HaloDim ? HaloDim() : 1, warn = window.HaloWarn || { stage: 0, at: 0 };
     var settings = window.HaloSettings || {};
-    var K = SCHEMES[settings.s2kColor] || SCHEMES.sport; LIT = K.lit; GHOST = K.ghost;
+    var style = settings.s2kStyle || "classic";
+    var K = SCHEMES[window.HaloS2kPreview || colourOf(settings)] || SCHEMES.sport; LIT = K.lit; GHOST = K.ghost;
     GLOW = s.renderQuality === 1 ? 0 : Math.max(4, FH * 0.016);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, FW, FH);
     var W = Math.min((FW - 2 * (window.HaloSx || 0)) * 0.97, FH * 2.16), H = W / 2.16, ox = (FW - W) / 2, oy = (FH - H) / 2;
     ctx.setTransform(dpr, 0, 0, dpr, ox * dpr, oy * dpr);
     ctx.globalAlpha = dim;
+    if (style !== "classic") {
+      (style === "modern" ? drawModern : drawRedLcd)({ s: s, W: W, H: H, K: K, dim: dim, warn: warn, settings: settings, imp: imp, max: max, step: step });
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.globalAlpha = 1; ctx.shadowBlur = 0;
+      return;
+    }
 
     // ---- the face: a lopsided dome with a lower shoulder on the right, and the strip below
     var cx = W * 0.42, cy = H * 0.8, rx = W * 0.4, ry = H * 0.76, A0 = 178, A1 = 48;      // bar arc, degrees
@@ -305,7 +536,7 @@
     var key = [Math.round(spd * 4), Math.round(pw), Math.round(s.egoSpeed), s.gear, s.leftBlinker, s.rightBlinker, s.leftBlindSpot, s.rightBlindSpot,
       s.adasOn, s.accSetSpeed, s.fusedSpeedLimit, s.trafficLightColor, Math.round(s.stopLineDist), s.buckleStatus, s.anyDoorOpen, s.isImperial,
       Math.round(s.odometer), new Date(s.currentTime || Date.now()).getMinutes(), warn.stage, warn.at, window.HaloDim ? HaloDim() : 1,
-      window.HaloDrives && Math.round((HaloDrives.tripKm || 0) * 10), (window.HaloSettings || {}).stopLine, (window.HaloSettings || {}).s2kColor, W, H].join();
+      window.HaloDrives && Math.round((HaloDrives.tripKm || 0) * 10), (window.HaloSettings || {}).stopLine, (window.HaloSettings || {}).s2kColor, (window.HaloSettings || {}).s2kStyle, JSON.stringify((window.HaloSettings || {}).s2kColors || {}), window.HaloS2kPreview, W, H].join();
     if (key === last && !urgent) return;
     last = key; draw(s, W, H);
   });

@@ -597,6 +597,12 @@ html, body { touch-action: none; overscroll-behavior: none; }
           <small>Dims the glow and text. Hazards, turn signals and speed warnings stay full strength.</small>
         </div>
         <p class="hint">Now: <span id="briNow">100%</span></p>
+        <div class="field" id="s2kStyleField">
+          <b id="s2kStyleLbl">S2000 style</b>
+          <div class="seg" role="radiogroup" aria-labelledby="s2kStyleLbl" data-key="s2kStyle" data-def="classic">
+            <button type="button" role="radio" data-v="classic">Classic</button><button type="button" role="radio" data-v="modern">Modern</button><button type="button" role="radio" data-v="redlcd">Red LCD</button>
+          </div>
+        </div>
         <div class="field hudField">
           <b id="hudLbl">HUD image</b>
           <div class="seg" role="radiogroup" aria-labelledby="hudLbl" data-key="hudFlip" data-def="flip">
@@ -620,7 +626,7 @@ html, body { touch-action: none; overscroll-behavior: none; }
           <small id="sunNote"></small>
         </div>
         <div class="field">
-          <b>Screen</b>
+          <b id="arrLbl">Screen</b>
           <div><button type="button" class="arrBtn" id="arrStart">Arrange screen</button></div>
           <small id="arrNote">Move the speed, sign, gears and more.</small>
         </div>
@@ -631,7 +637,7 @@ html, body { touch-action: none; overscroll-behavior: none; }
           <div class="seg" role="radiogroup" aria-labelledby="themeLbl" data-key="theme" data-def="halo">
             <button type="button" role="radio" data-v="halo">Halo</button><button type="button" role="radio" data-v="matrix">Matrix</button><button type="button" role="radio" data-v="s2000">S2000</button>
           </div>
-          <small>Matrix: green ring gauges over digital rain. S2000: a digital cluster after Honda's. Both always dark.</small>
+          <small>Matrix and S2000 are always dark.</small>
         </div>
         <div class="field" id="s2kField">
           <b id="s2kLbl">S2000 colour</b>
@@ -711,7 +717,7 @@ html, body { touch-action: none; overscroll-behavior: none; }
 (function () {
   var $ = function (id) { return document.getElementById(id); };
   // ---- build number: raise it with every change pushed, so the car shows which build it has
-  var HALO_VERSION = "1.11";
+  var HALO_VERSION = "1.12";
   $("ver").textContent = "Halo v" + HALO_VERSION; $("verToast").textContent = "Halo v" + HALO_VERSION;
   setTimeout(function () { $("verToast").classList.add("gone"); }, 3500);
   var cv = $("c"), ctx = cv.getContext("2d"), W, H, P = [], idx = {};
@@ -931,7 +937,7 @@ html, body { touch-action: none; overscroll-behavior: none; }
     ["Swipe left to change colours", "Swipe left across the dash for the next colour scheme, right to go back."],
     ["Slide up or down for brightness", "Put a finger on the dash and slide up to brighten, down to dim."],
     ["Press and hold for settings", "Hold a finger still on the dash for a moment to open settings."]];
-  var tourStep = -1, tourCycle = 0, tourSaved = null;
+  var tourStep = -1, tourCycle = 0;
   function maybeTour() {
     if (s2k && !settings.tourS2k && !settings.hud && $("sheet").hidden && $("tour").hidden && !arranging) setTimeout(function () {
       if (s2k && !settings.tourS2k && $("sheet").hidden && $("tour").hidden) showTour(0);
@@ -939,7 +945,7 @@ html, body { touch-action: none; overscroll-behavior: none; }
   }
   function showTour(i) {
     clearInterval(tourCycle);
-    if (tourSaved !== null) { settings.s2kColor = tourSaved; tourSaved = null; }
+    window.HaloS2kPreview = null;
     if (i >= TOUR.length) { endTour(); return; }
     tourStep = i; $("tour").hidden = false; $("tour").setAttribute("data-step", i);
     $("tourTitle").textContent = TOUR[i][0]; $("tourText").textContent = TOUR[i][1];
@@ -947,14 +953,13 @@ html, body { touch-action: none; overscroll-behavior: none; }
     [].forEach.call($("tourDots").children, function (d, k) { d.className = k === i ? "on" : ""; });
     host("setEditing", "editing", true);
     if (i === 0) {
-      tourSaved = settings.s2kColor || "";
       var k = 0, order = ["sport", "white", "yellow", "red", "purple", "green"];
-      tourCycle = setInterval(function () { k = (k + 1) % order.length; settings.s2kColor = order[k]; }, 1600);
+      tourCycle = setInterval(function () { k = (k + 1) % order.length; window.HaloS2kPreview = order[k]; }, 1600);
     }
   }
   function endTour() {
     clearInterval(tourCycle);
-    if (tourSaved !== null) { settings.s2kColor = tourSaved || undefined; tourSaved = null; }
+    window.HaloS2kPreview = null;
     $("tour").hidden = true; tourStep = -1; host("setEditing", "editing", false);
     settings.tourS2k = true; saveSettings(settings);
   }
@@ -972,9 +977,12 @@ html, body { touch-action: none; overscroll-behavior: none; }
   var slide = null, SLIDE_START = 22, BRI_MIN = 20, pillT = 0;
   // S2000 colour schemes, in swipe order: left swipe goes to the next, right to the previous
   var SCHEMES = ["sport", "white", "yellow", "red", "purple", "green"], SWIPE_MIN = 60, schemeT = 0;
+  // each S2000 style keeps its own colour scheme (s2000.js resolves the same way)
+  function s2kColour() { return window.HaloS2kColour ? HaloS2kColour(settings) : settings.s2kColor || "sport"; }
+  function setS2kColour(c) { settings.s2kColors = settings.s2kColors || {}; settings.s2kColors[settings.s2kStyle || "classic"] = c; }
   function nextScheme(step) {
-    var cur = SCHEMES.indexOf(settings.s2kColor || "sport"), nx = SCHEMES[(cur + step + SCHEMES.length) % SCHEMES.length];
-    settings.s2kColor = nx; saveSettings(settings); syncCarUi();
+    var cur = SCHEMES.indexOf(s2kColour()), nx = SCHEMES[(cur + step + SCHEMES.length) % SCHEMES.length];
+    setS2kColour(nx); saveSettings(settings); syncCarUi();
     var b = document.querySelector('[data-key="s2kColor"] [data-v="' + nx + '"]'), vt = $("verToast");
     vt.textContent = "S2000 · " + (b ? b.getAttribute("aria-label").replace(/:.*/, "") : nx);
     vt.classList.remove("gone"); clearTimeout(schemeT);
@@ -1141,6 +1149,7 @@ html, body { touch-action: none; overscroll-behavior: none; }
   function pick(group, key, v) {
     if (key === "theme") themePreview = "";         // the driver's choice beats a #matrix / #s2000 preview
     if (key === "laneMode") delete settings.laneView;
+    if (key === "s2kColor") { setS2kColour(v); saveSettings(settings); syncCarUi(); return; }
     settings[key] = v; saveSettings(settings); applyTheme(); applyLaneView(); applyMoves(); syncCarUi();
     hudImage();
     if (window.HaloCarChanged) window.HaloCarChanged();
@@ -1152,6 +1161,7 @@ html, body { touch-action: none; overscroll-behavior: none; }
   function syncCarUi() {
     [].forEach.call(document.querySelectorAll(".seg"), function (g) {
       var cur = g.dataset.key === "theme" ? (matrix ? "matrix" : s2k ? "s2000" : "halo") : g.dataset.key === "laneMode" ? laneMode()
+        : g.dataset.key === "s2kColor" ? s2kColour()
         : settings[g.dataset.key] || g.dataset.def || "auto";
       [].forEach.call(g.children, function (b) { b.setAttribute("aria-checked", b.dataset.v === cur ? "true" : "false"); });
     });
@@ -1159,9 +1169,10 @@ html, body { touch-action: none; overscroll-behavior: none; }
     [].forEach.call($("overSeg").children, function (b, i) { b.textContent = "+" + offs[i]; });
     $("overSeg").setAttribute("aria-disabled", settings.warn === "off" ? "true" : "false");
     $("layField").hidden = matrix || s2k;          // only the Halo theme has layouts
-    $("s2kField").hidden = !s2k;
+    $("s2kField").hidden = $("s2kStyleField").hidden = !s2k;
+    $("arrStart").parentNode.parentNode.hidden = s2k;     // S2000 is one drawing: nothing to arrange
     var sc = document.querySelector('[data-key="s2kColor"] [aria-checked="true"]');
-    $("s2kName").textContent = (sc ? sc.getAttribute("aria-label") : "Sport") + ". Swipe left or right on the dash to change it.";
+    $("s2kName").textContent = (sc ? sc.getAttribute("aria-label").replace(/:.*/, "") : "Sport") + ". Swipe left or right on the dash to change it.";
     $("arrStart").disabled = s2k;
     $("arrNote").textContent = s2k ? "The S2000 cluster is drawn as one piece, so it can't be rearranged."
       : "Move the speed, sign, gears and more.";
