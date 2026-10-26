@@ -411,6 +411,7 @@ html, body { touch-action: none; overscroll-behavior: none; }
 #s2k { display: none; position: fixed; inset: 0; width: 100%; height: 100%; }
 .s2000 #s2k { display: block; }
 .s2000 .wrap, .s2000 .top, .s2000 .odo, .s2000 .nkw, .s2000 #c, .s2000 .tells { display: none; }
+.s2000 .verToast { bottom: auto; top: calc(var(--u) * 3); }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
 </head>
@@ -651,7 +652,7 @@ html, body { touch-action: none; overscroll-behavior: none; }
 (function () {
   var $ = function (id) { return document.getElementById(id); };
   // ---- build number: raise it with every change pushed, so the car shows which build it has
-  var HALO_VERSION = "1.1";
+  var HALO_VERSION = "1.2";
   $("ver").textContent = "Halo v" + HALO_VERSION; $("verToast").textContent = "Halo v" + HALO_VERSION;
   setTimeout(function () { $("verToast").classList.add("gone"); }, 3500);
   var cv = $("c"), ctx = cv.getContext("2d"), W, H, P = [], idx = {};
