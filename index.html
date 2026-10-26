@@ -711,7 +711,7 @@ html, body { touch-action: none; overscroll-behavior: none; }
 (function () {
   var $ = function (id) { return document.getElementById(id); };
   // ---- build number: raise it with every change pushed, so the car shows which build it has
-  var HALO_VERSION = "1.10";
+  var HALO_VERSION = "1.11";
   $("ver").textContent = "Halo v" + HALO_VERSION; $("verToast").textContent = "Halo v" + HALO_VERSION;
   setTimeout(function () { $("verToast").classList.add("gone"); }, 3500);
   var cv = $("c"), ctx = cv.getContext("2d"), W, H, P = [], idx = {};
