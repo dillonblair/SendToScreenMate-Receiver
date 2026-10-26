@@ -148,8 +148,7 @@
       for (var f = 0; f <= 40; f++) { var pt = at(-0.012 + f / 40 * 0.9, 1.06); ctx.lineTo(pt[0], pt[1]); }
       ctx.quadraticCurveTo(W * 0.86, H * 0.2, W * 0.985, H * 0.42); ctx.lineTo(W * 0.988, fy1); ctx.closePath();
     }
-    // the face: black, lit softly from above, darker toward the bottom, with a lit rim and a
-    // faint sheen across the top of the visor
+    // the face: black, lit softly from above and darker toward the bottom; no outline
     face(); var fg = ctx.createLinearGradient(0, 0, 0, H * 0.8); fg.addColorStop(0, "#08090A"); fg.addColorStop(1, "#010101");
     ctx.fillStyle = fg; ctx.fill();
     ctx.save(); face(); ctx.clip();
@@ -157,10 +156,6 @@
     lg.addColorStop(0, "rgba(255,255,255,0.045)"); lg.addColorStop(1, "rgba(255,255,255,0)");
     ctx.fillStyle = lg; ctx.fillRect(0, 0, W, H);
     ctx.restore();
-    face(); ctx.strokeStyle = "rgba(0,0,0,0.9)"; ctx.lineWidth = 4; ctx.stroke();
-    var rim = ctx.createLinearGradient(0, 0, 0, H * 0.8);
-    rim.addColorStop(0, "rgba(255,255,255,0.16)"); rim.addColorStop(0.6, "rgba(255,255,255,0.05)"); rim.addColorStop(1, "rgba(255,255,255,0.02)");
-    face(); ctx.strokeStyle = rim; ctx.lineWidth = 1.2; ctx.stroke();
     // the strip: a bevelled band with a recessed groove for the lamps
     var sy0 = H * 0.83, sh = H * 0.15;
     var sg = ctx.createLinearGradient(0, sy0, 0, sy0 + sh); sg.addColorStop(0, "#121315"); sg.addColorStop(1, "#070808");
