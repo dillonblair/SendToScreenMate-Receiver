@@ -14,7 +14,8 @@
   var W = 0, H = 0, spd = 0, pw = 0, last = "";
   // LIT and GHOST follow the chosen colour scheme (the bars, digits, LCD and dials); TXT,
   // the printed scale and labels, stays white as on the real cluster
-  var LIT = "#F4F4F0", GHOST = "rgba(255,255,255,0.05)", TXT = "#F4F4F0", RED = "#FF2B1C", RED_GHOST = "rgba(255,43,28,0.13)";
+  var LIT = "#F4F4F0", GHOST = "rgba(255,255,255,0.05)", TXT = "#F4F4F0", RED = "#FF2B1C", RED_GHOST = "rgba(255,43,28,0.07)";
+  var GLOW = 0;          // backlight glow on lit segments, in px (0 at the lowest render quality)
   var SCHEMES = {
     white:  { lit: "#F4F4F0", dark: "#9C9C98", ghost: "rgba(255,255,255,0.05)" },
     yellow: { lit: "#E8F23C", dark: "#8C9418", ghost: "rgba(232,242,60,0.06)" },
@@ -46,8 +47,10 @@
     for (var n in P) {
       var hit = on.indexOf(n) >= 0;
       if (!hit && !ghost) continue;
+      ctx.shadowBlur = hit && GLOW ? GLOW * w / 30 : 0; ctx.shadowColor = lit;
       ctx.fillStyle = hit ? lit : ghost; poly(P[n]);
     }
+    ctx.shadowBlur = 0;
     ctx.restore();
   }
   // a right-aligned row of `slots` digits ending at xr; "." lights the point after a digit.
@@ -63,8 +66,9 @@
     }
     return xr - slots * (w + gap) + gap;
   }
-  function label(text, x, y, size, color, align, weight, slant) {
+  function label(text, x, y, size, color, align, weight, slant, glow) {
     ctx.save(); ctx.font = (weight || 500) + " " + size + "px Montserrat, system-ui, sans-serif";
+    if (glow && GLOW) { ctx.shadowColor = color; ctx.shadowBlur = glow; }
     ctx.textAlign = align || "left"; ctx.textBaseline = "alphabetic"; ctx.fillStyle = color;
     if (slant !== false) ctx.transform(1, 0, -0.1, 1, 0.1 * y, 0);
     ctx.fillText(text, x, y); ctx.restore();
@@ -77,9 +81,16 @@
   // an LCD window: a dark recessed panel with a faint rim
   function lcd(x, y, w, h) {
     var g = ctx.createLinearGradient(0, y, 0, y + h);
-    g.addColorStop(0, "#15181B"); g.addColorStop(1, "#0C0E10");
+    g.addColorStop(0, "#0C0E10"); g.addColorStop(0.18, "#15181B"); g.addColorStop(1, "#101215");
     rrect(x, y, w, h, h * 0.08); ctx.fillStyle = g; ctx.fill();
-    ctx.strokeStyle = "rgba(255,255,255,0.09)"; ctx.lineWidth = 1; ctx.stroke();
+    // recessed: a dark lip along the top, a faint lit edge along the bottom, and glass on top
+    ctx.save(); rrect(x, y, w, h, h * 0.08); ctx.clip();
+    ctx.strokeStyle = "rgba(0,0,0,0.7)"; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(x, y + 1); ctx.lineTo(x + w, y + 1); ctx.stroke();
+    var gl = ctx.createLinearGradient(0, y, 0, y + h * 0.45);
+    gl.addColorStop(0, "rgba(255,255,255,0.045)"); gl.addColorStop(1, "rgba(255,255,255,0)");
+    ctx.fillStyle = gl; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + w, y); ctx.lineTo(x + w, y + h * 0.3); ctx.quadraticCurveTo(x + w / 2, y + h * 0.48, x, y + h * 0.3); ctx.fill();
+    ctx.restore();
+    rrect(x, y, w, h, h * 0.08); ctx.strokeStyle = "rgba(255,255,255,0.08)"; ctx.lineWidth = 1; ctx.stroke();
   }
   // a small round dial on the shoulder: n radial bars over the top half; color(i) says
   // what bar i shows (a colour when lit, or null to leave it unlit)
@@ -87,10 +98,12 @@
     for (var i = 0; i < n; i++) {
       var a0 = (180 + (i + 0.2) / n * 180) * D2R, a1 = (180 + (i + 0.8) / n * 180) * D2R, k0 = 0.66;
       var c = color(i), red = redAt(i);
+      ctx.shadowBlur = c && GLOW ? GLOW * 0.8 : 0; ctx.shadowColor = c || "#000";
       ctx.fillStyle = c || (red ? RED_GHOST : GHOST);
       poly([cx + Math.cos(a0) * r * k0, cy + Math.sin(a0) * r * k0, cx + Math.cos(a0) * r, cy + Math.sin(a0) * r,
         cx + Math.cos(a1) * r, cy + Math.sin(a1) * r, cx + Math.cos(a1) * r * k0, cy + Math.sin(a1) * r * k0]);
     }
+    ctx.shadowBlur = 0;
     ctx.strokeStyle = "rgba(255,255,255,0.35)"; ctx.lineWidth = 1.2;
     ctx.beginPath(); ctx.moveTo(cx - r * 1.04, cy); ctx.lineTo(cx - r * 0.6, cy); ctx.moveTo(cx + r * 0.6, cy); ctx.lineTo(cx + r * 1.04, cy); ctx.stroke();
   }
@@ -120,6 +133,7 @@
     var dim = window.HaloDim ? HaloDim() : 1, warn = window.HaloWarn || { stage: 0, at: 0 };
     var settings = window.HaloSettings || {};
     var K = SCHEMES[settings.s2kColor] || SCHEMES.sport; LIT = K.lit; GHOST = K.ghost;
+    GLOW = s.renderQuality === 1 ? 0 : Math.max(4, FH * 0.016);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, FW, FH);
     var W = Math.min((FW - 2 * (window.HaloSx || 0)) * 0.97, FH * 2.16), H = W / 2.16, ox = (FW - W) / 2, oy = (FH - H) / 2;
     ctx.setTransform(dpr, 0, 0, dpr, ox * dpr, oy * dpr);
@@ -129,25 +143,57 @@
     var cx = W * 0.42, cy = H * 0.8, rx = W * 0.4, ry = H * 0.76, A0 = 178, A1 = 48;      // bar arc, degrees
     function at(t, k) { var a = (A0 - (A0 - A1) * t) * D2R; return [cx + Math.cos(a) * rx * k, cy - Math.sin(a) * ry * k]; }
     var fx0 = W * 0.012, fy1 = H * 0.79;
-    ctx.beginPath(); ctx.moveTo(fx0, fy1);
-    for (var f = 0; f <= 40; f++) { var pt = at(-0.012 + f / 40 * 0.9, 1.06); ctx.lineTo(pt[0], pt[1]); }
-    ctx.quadraticCurveTo(W * 0.86, H * 0.2, W * 0.985, H * 0.42); ctx.lineTo(W * 0.988, fy1); ctx.closePath();
-    var fg = ctx.createLinearGradient(0, 0, 0, H); fg.addColorStop(0, "#060606"); fg.addColorStop(1, "#020202");
-    ctx.fillStyle = fg; ctx.fill(); ctx.strokeStyle = "rgba(255,255,255,0.07)"; ctx.lineWidth = 1.2; ctx.stroke();
-    // the strip
+    function face() {
+      ctx.beginPath(); ctx.moveTo(fx0, fy1);
+      for (var f = 0; f <= 40; f++) { var pt = at(-0.012 + f / 40 * 0.9, 1.06); ctx.lineTo(pt[0], pt[1]); }
+      ctx.quadraticCurveTo(W * 0.86, H * 0.2, W * 0.985, H * 0.42); ctx.lineTo(W * 0.988, fy1); ctx.closePath();
+    }
+    // the face: black, lit softly from above, darker toward the bottom, with a lit rim and a
+    // faint sheen across the top of the visor
+    face(); var fg = ctx.createLinearGradient(0, 0, 0, H * 0.8); fg.addColorStop(0, "#08090A"); fg.addColorStop(1, "#010101");
+    ctx.fillStyle = fg; ctx.fill();
+    ctx.save(); face(); ctx.clip();
+    var lg = ctx.createRadialGradient(cx, H * 0.05, 0, cx, H * 0.05, W * 0.45);
+    lg.addColorStop(0, "rgba(255,255,255,0.045)"); lg.addColorStop(1, "rgba(255,255,255,0)");
+    ctx.fillStyle = lg; ctx.fillRect(0, 0, W, H);
+    ctx.restore();
+    face(); ctx.strokeStyle = "rgba(0,0,0,0.9)"; ctx.lineWidth = 4; ctx.stroke();
+    var rim = ctx.createLinearGradient(0, 0, 0, H * 0.8);
+    rim.addColorStop(0, "rgba(255,255,255,0.16)"); rim.addColorStop(0.6, "rgba(255,255,255,0.05)"); rim.addColorStop(1, "rgba(255,255,255,0.02)");
+    face(); ctx.strokeStyle = rim; ctx.lineWidth = 1.2; ctx.stroke();
+    // the strip: a bevelled band with a recessed groove for the lamps
     var sy0 = H * 0.83, sh = H * 0.15;
-    rrect(W * 0.012, sy0, W * 0.976, sh, sh * 0.5); ctx.fillStyle = "#0B0C0D"; ctx.fill(); ctx.strokeStyle = "rgba(255,255,255,0.06)"; ctx.stroke();
-    rrect(W * 0.17, sy0 + sh * 0.2, W * 0.66, sh * 0.6, sh * 0.3); ctx.fillStyle = "#050606"; ctx.fill(); ctx.strokeStyle = "rgba(255,255,255,0.05)"; ctx.stroke();
+    var sg = ctx.createLinearGradient(0, sy0, 0, sy0 + sh); sg.addColorStop(0, "#121315"); sg.addColorStop(1, "#070808");
+    rrect(W * 0.012, sy0, W * 0.976, sh, sh * 0.5); ctx.fillStyle = sg; ctx.fill(); ctx.strokeStyle = "rgba(255,255,255,0.07)"; ctx.lineWidth = 1; ctx.stroke();
+    rrect(W * 0.17, sy0 + sh * 0.2, W * 0.66, sh * 0.6, sh * 0.3); ctx.fillStyle = "#040505"; ctx.fill();
+    ctx.strokeStyle = "rgba(0,0,0,0.8)"; ctx.lineWidth = 2; ctx.stroke(); ctx.strokeStyle = "rgba(255,255,255,0.05)"; ctx.lineWidth = 1; ctx.stroke();
 
     // ---- the bars: lit up to the speed, red past the warning threshold (or the top eighth without a limit)
     var N = 118, frac = Math.min(1, spd / max), redFrom = warn.at > 0 ? Math.min(1, warn.at / max) : 0.875;
+    function barColor(t) { var bd = K.bands ? K.bands.filter(function (b) { return t < b[0]; })[0] : null; return t >= redFrom ? (K.zone || RED) : bd ? bd[1] : LIT; }
+    // backlight bloom behind the lit bars: only the blur of a stroke is drawn (the stroke
+    // itself sits off-canvas, the shadow is offset back on), so the glow has no hard edge
+    if (GLOW && frac > 0.005) {
+      var OFF_X = W * 4;
+      ctx.save(); ctx.lineCap = "round"; ctx.lineWidth = H * 0.1; ctx.globalAlpha = dim * (K.bands ? 0.4 : 0.28);
+      ctx.shadowOffsetX = -OFF_X; ctx.shadowBlur = H * 0.05;
+      for (var bt = 0; bt < frac; bt += 0.04) {
+        var b0 = at(bt, 0.89), b1 = at(Math.min(frac, bt + 0.04), 0.89);
+        ctx.shadowColor = barColor(bt); ctx.strokeStyle = "#000";
+        ctx.beginPath(); ctx.moveTo(b0[0] + OFF_X, b0[1]); ctx.lineTo(b1[0] + OFF_X, b1[1]); ctx.stroke();
+      }
+      ctx.restore();
+    }
+    var lastLit = Math.floor(frac * N + 0.0005) - 1;
     for (var i = 0; i < N; i++) {
       var t0 = (i + 0.22) / N, t1 = (i + 0.78) / N, kin = 0.78, lit = (i + 1) / N <= frac + 0.0005, red = t0 >= redFrom;
       var a = at(t0, kin), b = at(t0, 1), c = at(t1, 1), d = at(t1, kin);
       if (lit) {
         var bg = ctx.createLinearGradient(a[0], a[1], b[0], b[1]);
         var band = K.bands ? K.bands.filter(function (b) { return t0 < b[0]; })[0] : null;
-        bg.addColorStop(0, red ? "#B3170C" : band ? band[2] : K.dark); bg.addColorStop(1, red ? (K.zone || RED) : band ? band[1] : LIT); ctx.fillStyle = bg;
+        bg.addColorStop(0, red ? "#B3170C" : band ? band[2] : K.dark); bg.addColorStop(1, red ? (K.zone || RED) : band ? band[1] : LIT);
+        if (i === lastLit) bg.addColorStop(1, "#FFFFFF");            // the leading bar burns white-hot
+        ctx.fillStyle = bg;
       } else ctx.fillStyle = red ? RED_GHOST : GHOST;
       poly([a[0], a[1], b[0], b[1], c[0], c[1], d[0], d[1]]);
     }
@@ -159,8 +205,10 @@
     var fs = Math.round(H * 0.075);
     for (var v = 0; v <= max; v += step / 2) {
       var tt = v / max, major = v % step === 0, p1 = at(tt, 0.735), p2 = at(tt, major ? 0.695 : 0.715);
+      ctx.shadowColor = TICK; ctx.shadowBlur = GLOW * 0.6;
       ctx.strokeStyle = TICK; ctx.lineWidth = major ? 2.2 : 1.4; ctx.beginPath(); ctx.moveTo(p1[0], p1[1]); ctx.lineTo(p2[0], p2[1]); ctx.stroke();
-      if (major) { var q = at(tt, 0.635); label(String(v / 10), q[0], q[1] + fs * 0.36, fs, TXT, "center", 300, false); }
+      ctx.shadowBlur = 0;
+      if (major) { var q = at(tt, 0.635); label(String(v / 10), q[0], q[1] + fs * 0.36, fs, TXT, "center", 300, false, GLOW * 0.5); }
     }
     var z = at(0.02, 0.62); label("x10" + (imp ? "mph" : "km/h"), z[0] + fs * 0.55, z[1] + fs * 0.36, Math.round(fs * 0.38), TXT, "left", 400, false);
 
@@ -189,9 +237,20 @@
     label("TRIP", (lx + lw * 0.48 + tl0) / 2, oy2 + oh * 0.45, Math.round(lh * 0.15), LIT, "center", 600, false);
 
     // turn arrows either side of the second window
+    // Blind spots: a car alongside tints that side's arrow red; signalling into it (or the car
+    // flagging it urgent) turns the arrow solid red and pulses it with the rim glow below.
+    var showBs = s.alwaysOnBlindSpotMonitor || s.leftBlinker || s.rightBlinker || s.dataSourceType === "demo", tnow = performance.now() / 1000;
+    var pulse = 0.55 + 0.45 * Math.sin(tnow * 14);
+    function bsLevel(bs, blink) { return !showBs || !bs ? 0 : bs === 2 || blink ? 2 : 1; }
+    var bsL = bsLevel(s.leftBlindSpot, s.leftBlinker), bsR = bsLevel(s.rightBlindSpot, s.rightBlinker);
+    function arrowColor(blink, lvl) { return lvl === 2 ? "rgba(255,43,28," + pulse.toFixed(2) + ")" : blink === 2 ? GREEN : lvl ? "rgba(255,43,28,0.4)" : OFF; }
     var as = H * 0.065, ay = ly + lh * 0.5;
-    arrow(lx - W * 0.015 - as, ay, as, -1, s.leftBlinker === 2 ? GREEN : OFF);     // x is the tip; it points left
-    arrow(lx + lw + W * 0.015 + as, ay, as, 1, s.rightBlinker === 2 ? GREEN : OFF);
+    [[lx - W * 0.015 - as, -1, s.leftBlinker, bsL], [lx + lw + W * 0.015 + as, 1, s.rightBlinker, bsR]].forEach(function (a) {   // x is the tip
+      var c = arrowColor(a[2], a[3]); ctx.save();
+      if (GLOW && (a[2] === 2 || a[3])) { ctx.shadowColor = a[3] ? RED : GREEN; ctx.shadowBlur = GLOW * 1.4; }
+      if (a[3]) ctx.globalAlpha = 1;                     // hazards stay at full strength
+      arrow(a[0], ay, as, a[1], c); ctx.restore();
+    });
 
     // ---- the shoulder dials: power (centre zero, green regen to the left) and battery
     var d1x = W * 0.835, d1y = H * 0.44, dr = W * 0.075, n = 22, half = n / 2, ps = Math.min(1, Math.abs(pw) / 100) * half;
@@ -220,8 +279,8 @@
     function lamp(l1, l2, x, color, on) {
       if (!on) return;                                  // a lamp only shows when it has something to say
       var c = color;
-      if (l2) { label(l1, x, ty - ts * 0.12, ts, c, "center", 800); label(l2, x, ty + ts * 0.95, ts, c, "center", 800); }
-      else label(l1, x, ty + ts * 0.4, Math.round(ts * 1.25), c, "center", 800);
+      if (l2) { label(l1, x, ty - ts * 0.12, ts, c, "center", 800, true, GLOW); label(l2, x, ty + ts * 0.95, ts, c, "center", 800, true, GLOW); }
+      else label(l1, x, ty + ts * 0.4, Math.round(ts * 1.25), c, "center", 800, true, GLOW);
     }
     lamp("ASSIST", "", W * 0.25, GREEN, !!s.adasOn);
     lamp("SET", String(Math.round(s.accSetSpeed)), W * 0.35, GREEN, s.adasOn && s.accSetSpeed > 0);
@@ -232,14 +291,19 @@
     lamp("SEAT", "BELT", W * 0.63, RED, s.gear === 4 && !s.buckleStatus);
     lamp("DOOR", "OPEN", W * 0.73, RED, !!s.anyDoorOpen);
 
-    // ---- blind spots: a red bar down that side of the screen, full strength whatever the brightness
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.globalAlpha = 1;
-    var sx = window.HaloSx || 0, showBs = s.alwaysOnBlindSpotMonitor || s.leftBlinker || s.rightBlinker || s.dataSourceType === "demo", tnow = performance.now() / 1000;
-    [["l", s.leftBlindSpot], ["r", s.rightBlindSpot]].forEach(function (bs) {
-      if (!showBs || !bs[1]) return;
-      ctx.globalAlpha = bs[1] === 2 ? 0.55 + 0.45 * Math.sin(tnow * 20) : 1;
-      ctx.fillStyle = RED; var bw = FH * 0.018, bx = bs[0] === "l" ? sx + FH * 0.02 : FW - sx - FH * 0.02 - bw;
-      ctx.fillRect(bx, FH * 0.2, bw, FH * 0.6);
+    // ---- blind spots: the face's own edge glows red on that side, fading toward the middle;
+    // full strength whatever the brightness, pulsing when urgent
+    ctx.globalAlpha = 1;
+    [[bsL, 0, W * 0.5], [bsR, W, W * 0.55]].forEach(function (b) {
+      if (!b[0]) return;
+      var a = b[0] === 2 ? pulse : 0.85, g = ctx.createLinearGradient(b[1], 0, b[2], 0);
+      g.addColorStop(0, "rgba(255,43,28," + a.toFixed(2) + ")"); g.addColorStop(0.55, "rgba(255,43,28," + (a * 0.35).toFixed(2) + ")"); g.addColorStop(1, "rgba(255,43,28,0)");
+      ctx.save(); face(); ctx.clip();                  // a soft red wash inside that edge
+      var wash = ctx.createLinearGradient(b[1], 0, b[1] + (b[2] - b[1]) * 0.5, 0);
+      wash.addColorStop(0, "rgba(255,43,28," + (a * 0.16).toFixed(2) + ")"); wash.addColorStop(1, "rgba(255,43,28,0)");
+      ctx.fillStyle = wash; ctx.fillRect(0, 0, W, H); ctx.restore();
+      face(); ctx.strokeStyle = g; ctx.lineWidth = 3; ctx.shadowColor = RED; ctx.shadowBlur = GLOW ? GLOW * 2.2 : 0; ctx.stroke();
+      ctx.shadowBlur = 0;
     });
     ctx.globalAlpha = 1;
   }
@@ -250,7 +314,9 @@
     if (w !== W || h !== H) { W = w; H = h; cv.width = w * dpr; cv.height = h * dpr; last = ""; }
     spd = Dash.smooth(spd, Math.max(0, s.egoSpeed || 0), dt, 8);
     pw = Dash.smooth(pw, s.powerLevel || 0, dt, 6);
-    var warn = window.HaloWarn || {}, urgent = s.leftBlindSpot === 2 || s.rightBlindSpot === 2;
+    var warn = window.HaloWarn || {};
+    // anything pulsing (an urgent blind spot, or signalling toward a car alongside) redraws every frame
+    var urgent = s.leftBlindSpot === 2 || s.rightBlindSpot === 2 || (s.leftBlindSpot && s.leftBlinker) || (s.rightBlindSpot && s.rightBlinker);
     var key = [Math.round(spd * 4), Math.round(pw), Math.round(s.egoSpeed), s.gear, s.leftBlinker, s.rightBlinker, s.leftBlindSpot, s.rightBlindSpot,
       s.adasOn, s.accSetSpeed, s.fusedSpeedLimit, s.trafficLightColor, Math.round(s.stopLineDist), s.buckleStatus, s.anyDoorOpen, s.isImperial,
       Math.round(s.odometer), new Date(s.currentTime || Date.now()).getMinutes(), warn.stage, warn.at, window.HaloDim ? HaloDim() : 1,
