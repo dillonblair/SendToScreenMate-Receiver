@@ -177,7 +177,7 @@
 
     // turn arrows either side of the second window
     var as = H * 0.065, ay = ly + lh * 0.5;
-    arrow(lx - W * 0.015, ay, as, -1, s.leftBlinker === 2 ? GREEN : OFF);
+    arrow(lx - W * 0.015 - as, ay, as, -1, s.leftBlinker === 2 ? GREEN : OFF);     // x is the tip; it points left
     arrow(lx + lw + W * 0.015 + as, ay, as, 1, s.rightBlinker === 2 ? GREEN : OFF);
 
     // ---- the shoulder dials: power (centre zero, green regen to the left) and battery
