@@ -419,6 +419,8 @@ html, body { touch-action: none; overscroll-behavior: none; }
 .arrBtn { font: 600 calc(var(--u) * 3.4) "Montserrat", system-ui, sans-serif; color: var(--ink); background: var(--faint); border: 0;
   border-radius: calc(var(--u) * 1.6); min-height: 40px; padding: 0 calc(var(--u) * 5); cursor: pointer; }
 .arrBtn[disabled] { opacity: .45; cursor: default; }
+.swseg button { display: grid; place-items: center; }
+.swseg i { display: block; width: calc(var(--u) * 5); height: calc(var(--u) * 5); min-width: 18px; min-height: 18px; border-radius: 50%; }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
 </head>
@@ -596,6 +598,13 @@ html, body { touch-action: none; overscroll-behavior: none; }
           </div>
           <small>Matrix: green ring gauges over digital rain. S2000: a digital cluster after Honda's. Both always dark.</small>
         </div>
+        <div class="field" id="s2kField">
+          <b id="s2kLbl">S2000 colour</b>
+          <div class="seg swseg" role="radiogroup" aria-labelledby="s2kLbl" data-key="s2kColor" data-def="sport">
+            <button type="button" role="radio" data-v="sport" aria-label="Sport: green to orange"><i style="background:linear-gradient(90deg,#3CF25A,#E8F23C,#FFA21E)"></i></button><button type="button" role="radio" data-v="white" aria-label="White"><i style="background:#F4F4F0"></i></button><button type="button" role="radio" data-v="yellow" aria-label="Yellow"><i style="background:#E8F23C"></i></button><button type="button" role="radio" data-v="red" aria-label="Red"><i style="background:#FF3A26"></i></button><button type="button" role="radio" data-v="purple" aria-label="Purple"><i style="background:#E650F2"></i></button><button type="button" role="radio" data-v="green" aria-label="Green"><i style="background:#3CF25A"></i></button>
+          </div>
+          <small id="s2kName">White</small>
+        </div>
         <div class="field" id="layField">
           <b id="layLbl">Layout</b>
           <div class="seg" role="radiogroup" aria-labelledby="layLbl" data-key="layout" data-def="classic" id="laySeg">
@@ -666,7 +675,7 @@ html, body { touch-action: none; overscroll-behavior: none; }
 (function () {
   var $ = function (id) { return document.getElementById(id); };
   // ---- build number: raise it with every change pushed, so the car shows which build it has
-  var HALO_VERSION = "1.5";
+  var HALO_VERSION = "1.6";
   $("ver").textContent = "Halo v" + HALO_VERSION; $("verToast").textContent = "Halo v" + HALO_VERSION;
   setTimeout(function () { $("verToast").classList.add("gone"); }, 3500);
   var cv = $("c"), ctx = cv.getContext("2d"), W, H, P = [], idx = {};
@@ -887,6 +896,16 @@ html, body { touch-action: none; overscroll-behavior: none; }
   // down dimmer, 20-100% in steps of 5, saved as a fixed level (Display tab: back to Auto).
   // Sideways moves are left alone for DashPilot's own swipe between dashes.
   var slide = null, SLIDE_START = 22, BRI_MIN = 20, pillT = 0;
+  // S2000 colour schemes, in swipe order: left swipe goes to the next, right to the previous
+  var SCHEMES = ["sport", "white", "yellow", "red", "purple", "green"], SWIPE_MIN = 60, schemeT = 0;
+  function nextScheme(step) {
+    var cur = SCHEMES.indexOf(settings.s2kColor || "sport"), nx = SCHEMES[(cur + step + SCHEMES.length) % SCHEMES.length];
+    settings.s2kColor = nx; saveSettings(settings); syncCarUi();
+    var b = document.querySelector('[data-key="s2kColor"] [data-v="' + nx + '"]'), vt = $("verToast");
+    vt.textContent = "S2000 · " + (b ? b.getAttribute("aria-label").replace(/:.*/, "") : nx);
+    vt.classList.remove("gone"); clearTimeout(schemeT);
+    schemeT = setTimeout(function () { vt.classList.add("gone"); }, 1400);
+  }
   function startPress(x, y) {
     if (!$("sheet").hidden || !$("hud").hidden || arranging) return;
     press = { x: x, y: y, t: performance.now(), moved: false };
@@ -896,9 +915,15 @@ html, body { touch-action: none; overscroll-behavior: none; }
     if (press && Math.hypot(x - press.x, y - press.y) > MOVE_TOLERANCE) { press = null; ringAt(0, 0, 0); }
     if (!slide) return;
     var dx = x - slide.x, dy = y - slide.y;
+    if (slide.h) { slide.lastX = x; return; }
     if (!slide.on) {
+      if (Math.abs(dy) < SLIDE_START && Math.abs(dx) < SLIDE_START) return;
+      if (Math.abs(dy) < Math.abs(dx) * 1.6) {
+        // a sideways swipe: on the S2000 it changes the colour scheme, otherwise it's DashPilot's
+        if (s2k && Math.abs(dx) >= Math.abs(dy) * 1.6) { slide.h = true; slide.lastX = x; } else slide = null;
+        return;
+      }
       if (Math.abs(dy) < SLIDE_START) return;
-      if (Math.abs(dy) < Math.abs(dx) * 1.6) { slide = null; return; }   // a sideways swipe
       slide.on = true; slide.y = y;                                        // start from here, no jump
       dy = 0;
     }
@@ -915,6 +940,7 @@ html, body { touch-action: none; overscroll-behavior: none; }
     if (press && performance.now() - press.t >= LONG_PRESS_MS) openSheet();
     press = null; ringAt(0, 0, 0);
     if (slide && slide.on) { saveSettings(settings); pillT = setTimeout(function () { $("briPill").classList.remove("on"); }, 1200); }
+    if (slide && slide.h && Math.abs(slide.lastX - slide.x) > SWIPE_MIN) nextScheme(slide.lastX < slide.x ? 1 : -1);
     slide = null;
   }
   function checkPress() {
@@ -1059,6 +1085,9 @@ html, body { touch-action: none; overscroll-behavior: none; }
     [].forEach.call($("overSeg").children, function (b, i) { b.textContent = "+" + offs[i]; });
     $("overSeg").setAttribute("aria-disabled", settings.warn === "off" ? "true" : "false");
     $("layField").hidden = matrix || s2k;          // only the Halo theme has layouts
+    $("s2kField").hidden = !s2k;
+    var sc = document.querySelector('[data-key="s2kColor"] [aria-checked="true"]');
+    $("s2kName").textContent = (sc ? sc.getAttribute("aria-label") : "Sport") + ". Swipe left or right on the dash to change it.";
     $("arrStart").disabled = s2k;
     $("arrNote").textContent = s2k ? "The S2000 cluster is drawn as one piece, so it can't be rearranged."
       : "Move the speed, sign, gears and more.";

@@ -12,7 +12,18 @@
   if (!cv) return;
   var ctx = cv.getContext("2d"), dpr = Math.min(2, window.devicePixelRatio || 1);
   var W = 0, H = 0, spd = 0, pw = 0, last = "";
-  var LIT = "#F4F4F0", GHOST = "rgba(255,255,255,0.05)", RED = "#FF2B1C", RED_GHOST = "rgba(255,43,28,0.13)";
+  // LIT and GHOST follow the chosen colour scheme (the bars, digits, LCD and dials); TXT,
+  // the printed scale and labels, stays white as on the real cluster
+  var LIT = "#F4F4F0", GHOST = "rgba(255,255,255,0.05)", TXT = "#F4F4F0", RED = "#FF2B1C", RED_GHOST = "rgba(255,43,28,0.13)";
+  var SCHEMES = {
+    white:  { lit: "#F4F4F0", dark: "#9C9C98", ghost: "rgba(255,255,255,0.05)" },
+    yellow: { lit: "#E8F23C", dark: "#8C9418", ghost: "rgba(232,242,60,0.06)" },
+    red:    { lit: "#FF3A26", dark: "#9E1C10", ghost: "rgba(255,58,38,0.08)", zone: "#FF9A2E", warn: ["#FFB020", "#FFFFFF"] },
+    purple: { lit: "#E650F2", dark: "#80288A", ghost: "rgba(230,80,242,0.07)" },
+    green:  { lit: "#3CF25A", dark: "#1A8A2C", ghost: "rgba(60,242,90,0.06)" },
+    // Sport: white digits, bars that run green, yellow, orange as the speed rises
+    sport:  { lit: "#F4F4F0", dark: "#9C9C98", ghost: "rgba(255,255,255,0.05)", bands: [[0.45, "#3CF25A", "#1A8A2C"], [0.7, "#E8F23C", "#8C9418"], [2, "#FFA21E", "#9A5A0A"]] }
+  };
   var GREEN = "#3BE36B", ORANGE = "#FF8A1E", AMBER = "#FFB020", TICK = "#8FB4E3", OFF = "rgba(255,255,255,0.07)";
   var SEGS = { "0": "abcdef", "1": "bc", "2": "abged", "3": "abgcd", "4": "fgbc", "5": "afgcd", "6": "afgedc", "7": "abc",
     "8": "abcdefg", "9": "abcdfg", "-": "g", "P": "abefg", "R": "eg", "N": "ceg", "D": "bcdeg", " ": "" };
@@ -108,6 +119,7 @@
     var imp = s.isImperial !== false, max = imp ? 140 : 220, step = imp ? 20 : 40;
     var dim = window.HaloDim ? HaloDim() : 1, warn = window.HaloWarn || { stage: 0, at: 0 };
     var settings = window.HaloSettings || {};
+    var K = SCHEMES[settings.s2kColor] || SCHEMES.sport; LIT = K.lit; GHOST = K.ghost;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, FW, FH);
     var W = Math.min((FW - 2 * (window.HaloSx || 0)) * 0.97, FH * 2.16), H = W / 2.16, ox = (FW - W) / 2, oy = (FH - H) / 2;
     ctx.setTransform(dpr, 0, 0, dpr, ox * dpr, oy * dpr);
@@ -134,7 +146,8 @@
       var a = at(t0, kin), b = at(t0, 1), c = at(t1, 1), d = at(t1, kin);
       if (lit) {
         var bg = ctx.createLinearGradient(a[0], a[1], b[0], b[1]);
-        bg.addColorStop(0, red ? "#B3170C" : "#9C9C98"); bg.addColorStop(1, red ? RED : LIT); ctx.fillStyle = bg;
+        var band = K.bands ? K.bands.filter(function (b) { return t0 < b[0]; })[0] : null;
+        bg.addColorStop(0, red ? "#B3170C" : band ? band[2] : K.dark); bg.addColorStop(1, red ? (K.zone || RED) : band ? band[1] : LIT); ctx.fillStyle = bg;
       } else ctx.fillStyle = red ? RED_GHOST : GHOST;
       poly([a[0], a[1], b[0], b[1], c[0], c[1], d[0], d[1]]);
     }
@@ -147,18 +160,18 @@
     for (var v = 0; v <= max; v += step / 2) {
       var tt = v / max, major = v % step === 0, p1 = at(tt, 0.735), p2 = at(tt, major ? 0.695 : 0.715);
       ctx.strokeStyle = TICK; ctx.lineWidth = major ? 2.2 : 1.4; ctx.beginPath(); ctx.moveTo(p1[0], p1[1]); ctx.lineTo(p2[0], p2[1]); ctx.stroke();
-      if (major) { var q = at(tt, 0.635); label(String(v / 10), q[0], q[1] + fs * 0.36, fs, LIT, "center", 300, false); }
+      if (major) { var q = at(tt, 0.635); label(String(v / 10), q[0], q[1] + fs * 0.36, fs, TXT, "center", 300, false); }
     }
-    var z = at(0.02, 0.62); label("x10" + (imp ? "mph" : "km/h"), z[0] + fs * 0.55, z[1] + fs * 0.36, Math.round(fs * 0.38), LIT, "left", 400, false);
+    var z = at(0.02, 0.62); label("x10" + (imp ? "mph" : "km/h"), z[0] + fs * 0.55, z[1] + fs * 0.36, Math.round(fs * 0.38), TXT, "left", 400, false);
 
     // ---- the speed, in its LCD window, orange then red when over the limit
     var ww = W * 0.24, wh = H * 0.19, wx = cx - ww / 2 - W * 0.02, wy = H * 0.43;
     lcd(wx, wy, ww, wh);
-    var dh = wh * 0.8, dw = dh * 0.52, gap = dw * 0.2, sc = warn.stage === 2 ? RED : warn.stage === 1 ? ORANGE : LIT;
+    var dh = wh * 0.8, dw = dh * 0.52, gap = dw * 0.2, wc = K.warn || [ORANGE, RED], sc = warn.stage === 2 ? wc[1] : warn.stage === 1 ? wc[0] : LIT;
     var dl = field(String(Math.round(s.egoSpeed)), 3, wx + ww - (ww - 3 * (dw + gap) + gap) / 2, wy + (wh - dh) / 2, dw, dh, gap, sc, GHOST);
     var us = Math.round(H * 0.06);
-    label("mph", wx + ww + W * 0.01, wy + wh * 0.5, us, imp ? LIT : OFF, "left", 500, false);
-    label("km/h", wx + ww + W * 0.01, wy + wh * 0.5 + us * 1.15, us, imp ? OFF : LIT, "left", 500, false);
+    label("mph", wx + ww + W * 0.01, wy + wh * 0.5, us, imp ? TXT : OFF, "left", 500, false);
+    label("km/h", wx + ww + W * 0.01, wy + wh * 0.5 + us * 1.15, us, imp ? OFF : TXT, "left", 500, false);
 
     // ---- the second window: gear and clock, then odometer and trip
     var lw = W * 0.27, lh = H * 0.15, lx = cx - lw / 2, ly = wy + wh + H * 0.02;
@@ -187,36 +200,37 @@
       return i < half && i >= half - ps ? GREEN : null;
     }, function (i) { return i >= n - 3; });
     var gl = Math.round(H * 0.06);
-    label("R", d1x - dr * 0.95, d1y + gl * 1.05, gl, LIT, "center", 400, false);
-    label("P", d1x + dr * 0.95, d1y + gl * 1.05, gl, LIT, "center", 400, false);
-    icon("bolt", d1x, d1y - dr * 0.25, dr * 0.42, LIT);
+    label("R", d1x - dr * 0.95, d1y + gl * 1.05, gl, TXT, "center", 400, false);
+    label("P", d1x + dr * 0.95, d1y + gl * 1.05, gl, TXT, "center", 400, false);
+    icon("bolt", d1x, d1y - dr * 0.25, dr * 0.42, TXT);
     var kwMax = s.maxDischargePower > 0 ? s.maxDischargePower : 0, regenMax = s.maxRegenPower > 0 ? s.maxRegenPower : 0;
-    if (kwMax || regenMax) label(Math.round(pw >= 0 ? pw / 100 * kwMax : pw / 100 * regenMax) + " kW", d1x, d1y + gl * 0.95, Math.round(gl * 0.62), pw < -0.5 ? GREEN : LIT, "center", 600, false);
+    if (kwMax || regenMax) label(Math.round(pw >= 0 ? pw / 100 * kwMax : pw / 100 * regenMax) + " kW", d1x, d1y + gl * 0.95, Math.round(gl * 0.62), pw < -0.5 ? GREEN : TXT, "center", 600, false);
     var chg = window.Dash && Dash.charge ? Dash.charge(s) : -1;
     if (chg >= 0 && s.showCarBattery !== false) {
       var d2x = W * 0.9, d2y = H * 0.74, d2r = W * 0.065, n2 = 20, lit2 = Math.round(chg / 100 * n2);
       dial(d2x, d2y, d2r, n2, function (i) { return i < lit2 ? (i < 3 || chg < 20 ? RED : LIT) : null; }, function (i) { return i < 3; });
-      label("E", d2x - d2r * 0.95, d2y + gl * 1.0, gl, LIT, "center", 400, false);
-      label("F", d2x + d2r * 0.95, d2y + gl * 1.0, gl, LIT, "center", 400, false);
-      icon("batt", d2x, d2y - d2r * 0.28, d2r * 0.42, LIT);
-      label(chg + "%", d2x, d2y + gl * 0.9, Math.round(gl * 0.62), LIT, "center", 600, false);
+      label("E", d2x - d2r * 0.95, d2y + gl * 1.0, gl, TXT, "center", 400, false);
+      label("F", d2x + d2r * 0.95, d2y + gl * 1.0, gl, TXT, "center", 400, false);
+      icon("batt", d2x, d2y - d2r * 0.28, d2r * 0.42, TXT);
+      label(chg + "%", d2x, d2y + gl * 0.9, Math.round(gl * 0.62), TXT, "center", 600, false);
     }
 
     // ---- text lamps in the strip, two-line like MAINT REQ'D; dim when off
     var ty = sy0 + sh * 0.5, ts = Math.round(sh * 0.24);
     function lamp(l1, l2, x, color, on) {
-      var c = on ? color : OFF;
+      if (!on) return;                                  // a lamp only shows when it has something to say
+      var c = color;
       if (l2) { label(l1, x, ty - ts * 0.12, ts, c, "center", 800); label(l2, x, ty + ts * 0.95, ts, c, "center", 800); }
       else label(l1, x, ty + ts * 0.4, Math.round(ts * 1.25), c, "center", 800);
     }
     lamp("ASSIST", "", W * 0.25, GREEN, !!s.adasOn);
-    lamp("SET", s.adasOn && s.accSetSpeed > 0 ? String(Math.round(s.accSetSpeed)) : "- -", W * 0.35, GREEN, s.adasOn && s.accSetSpeed > 0);
-    lamp("LIMIT", s.fusedSpeedLimit > 0 ? String(Math.round(s.fusedSpeedLimit)) : "- -", W * 0.43, ORANGE, s.fusedSpeedLimit > 0);
+    lamp("SET", String(Math.round(s.accSetSpeed)), W * 0.35, GREEN, s.adasOn && s.accSetSpeed > 0);
+    lamp("LIMIT", String(Math.round(s.fusedSpeedLimit)), W * 0.43, ORANGE, s.fusedSpeedLimit > 0);
     var tl = settings.stopLine === false ? 0 : s.trafficLightColor, TLC = ["", RED, GREEN, AMBER];
     var tld = tl && s.stopLineDist > 0 ? (imp ? Math.round(s.stopLineDist * 3.281) + " FT" : Math.round(s.stopLineDist) + " M") : "- -";
     lamp("LIGHT", tld, W * 0.53, TLC[tl] || RED, tl > 0);
-    lamp("BELT", "", W * 0.63, RED, s.gear === 4 && !s.buckleStatus);
-    lamp("DOOR", "", W * 0.73, RED, !!s.anyDoorOpen);
+    lamp("SEAT", "BELT", W * 0.63, RED, s.gear === 4 && !s.buckleStatus);
+    lamp("DOOR", "OPEN", W * 0.73, RED, !!s.anyDoorOpen);
 
     // ---- blind spots: a red bar down that side of the screen, full strength whatever the brightness
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.globalAlpha = 1;
@@ -240,7 +254,7 @@
     var key = [Math.round(spd * 4), Math.round(pw), Math.round(s.egoSpeed), s.gear, s.leftBlinker, s.rightBlinker, s.leftBlindSpot, s.rightBlindSpot,
       s.adasOn, s.accSetSpeed, s.fusedSpeedLimit, s.trafficLightColor, Math.round(s.stopLineDist), s.buckleStatus, s.anyDoorOpen, s.isImperial,
       Math.round(s.odometer), new Date(s.currentTime || Date.now()).getMinutes(), warn.stage, warn.at, window.HaloDim ? HaloDim() : 1,
-      window.HaloDrives && Math.round((HaloDrives.tripKm || 0) * 10), (window.HaloSettings || {}).stopLine, W, H].join();
+      window.HaloDrives && Math.round((HaloDrives.tripKm || 0) * 10), (window.HaloSettings || {}).stopLine, (window.HaloSettings || {}).s2kColor, W, H].join();
     if (key === last && !urgent) return;
     last = key; draw(s, W, H);
   });
